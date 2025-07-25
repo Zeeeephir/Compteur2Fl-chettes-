@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compteur de Fléchettes</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts - Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #333;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-gray-900 to-gray-700 text-white p-4 sm:p-8 flex flex-col items-center justify-center">
+
+    <div class="bg-gray-800 p-6 sm:p-8 rounded-lg shadow-2xl w-full max-w-4xl border border-gray-700">
+        <h1 class="text-4xl font-extrabold text-center mb-6 text-yellow-400 drop-shadow-lg">
+            Compteur de Fléchettes
+        </h1>
+
+        <!-- Section de configuration du jeu -->
+        <div id="config-section" class="mb-8 p-4 bg-gray-700 rounded-md border border-gray-600">
+            <h2 class="text-2xl font-bold mb-4 text-center text-blue-300">Configuration du Jeu</h2>
+
+            <!-- Ajouter des joueurs -->
+            <div class="mb-4">
+                <label for="newPlayer" class="block text-lg font-medium mb-2">
+                    Ajouter un joueur:
+                </label>
+                <div class="flex flex-col sm:flex-row gap-2">
+                    <input
+                        type="text"
+                        id="newPlayer"
+                        class="flex-grow p-3 rounded-md bg-gray-900 border border-gray-600 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Nom du joueur"
+                    />
+                    <button
+                        id="addPlayerBtn"
+                        class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-md shadow-lg transition duration-300 ease-in-out transform hover:scale-105"
+                    >
+                        Ajouter
+                    </button>
+                </div>
+            </div>
+
+            <!-- Liste des joueurs -->
+            <div id="players-list-container" class="mb-4 hidden">
+                <h3 class="text-xl font-semibold mb-2 text-purple-300">Joueurs:</h3>
+                <ul id="players-list" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <!-- Les joueurs seront ajoutés ici par JS -->
+                </ul>
+            </div>
+
+            <!-- Choix du mode de jeu -->
+            <div class="mb-6">
+                <label for="gameMode" class="block text-lg font-medium mb-2">
+                    Mode de jeu:
+                </label>
+                <select
+                    id="gameMode"
+                    class="w-full p-3 rounded-md bg-gray-900 border border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                    <option value="301">301</option>
+                    <option value="501">501</option>
+                </select>
+            </div>
+
+            <!-- Options de règles -->
+            <div class="mb-6">
+                <h3 class="text-xl font-semibold mb-2 text-green-300">Options de Règles:</h3>
+                <div class="flex items-center mb-2">
+                    <input
+                        type="checkbox"
+                        id="doubleIn"
+                        class="form-checkbox h-5 w-5 text-blue-600 rounded"
+                    />
+                    <label for="doubleIn" class="ml-2 text-lg">Double In</label>
+                </div>
+                <div class="flex items-center">
+                    <input
+                        type="checkbox"
+                        id="doubleOut"
+                        class="form-checkbox h-5 w-5 text-blue-600 rounded"
+                    />
+                    <label for="doubleOut" class="ml-2 text-lg">Double Out</label>
+                </div>
+            </div>
+
+            <!-- Bouton Démarrer le jeu -->
+            <button
+                id="startGameBtn"
+                class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-md shadow-lg transition duration-300 ease-in-out transform hover:scale-105"
+            >
+                Démarrer le Jeu
+            </button>
+        </div>
+
+        <!-- Section du jeu en cours -->
+        <div id="game-section" class="mb-8 p-4 bg-gray-700 rounded-md border border-gray-600 hidden">
+            <h2 id="game-mode-display" class="text-2xl font-bold mb-4 text-center text-yellow-300">
+                Jeu en Cours: 501
+            </h2>
+
+            <!-- Affichage des scores des joueurs -->
+            <div id="player-scores-display" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                <!-- Les scores des joueurs seront ajoutés ici par JS -->
+            </div>
+
+            <!-- Entrée du score par fléchette -->
+            <div class="mb-4 text-center">
+                <p class="text-xl font-semibold mb-2 text-orange-300">
+                    C'est au tour de: <span id="current-player-name" class="text-yellow-400"></span>
+                </p>
+
+                <!-- Affichage des fléchettes lancées au tour actuel -->
+                <div class="bg-gray-900 p-3 rounded-md mb-4 border border-gray-600">
+                    <p class="text-lg font-medium text-gray-300">
+                        Fléchettes du tour (<span id="darts-count">0</span>/3):
+                        <span id="current-darts-display" class="font-bold text-white">Aucune</span>
+                    </p>
+                    <p class="text-lg font-medium text-gray-300">
+                        Multiplicateur sélectionné: <span id="selected-multiplier-display" class="font-bold text-white">Simple</span>
+                    </p>
+                </div>
+
+                <!-- Boutons Multiplicateurs -->
+                <div class="flex justify-center gap-2 mb-4">
+                    <button
+                        id="multiplier-simple"
+                        class="p-3 rounded-md text-xl font-bold transition duration-200 ease-in-out w-24 bg-green-500 text-white"
+                    >
+                        Simple (S)
+                    </button>
+                    <button
+                        id="multiplier-double"
+                        class="p-3 rounded-md text-xl font-bold transition duration-200 ease-in-out w-24 bg-gray-600 hover:bg-gray-500 text-white"
+                    >
+                        Double (D)
+                    </button>
+                    <button
+                        id="multiplier-triple"
+                        class="p-3 rounded-md text-xl font-bold transition duration-200 ease-in-out w-24 bg-gray-600 hover:bg-gray-500 text-white"
+                    >
+                        Triple (T)
+                    </button>
+                </div>
+
+                <!-- Clavier numérique -->
+                <div id="number-keypad" class="grid grid-cols-5 sm:grid-cols-7 gap-2 mb-4">
+                    <!-- Les boutons numériques seront ajoutés ici par JS -->
+                </div>
+
+                <!-- Bouton Annuler la dernière fléchette -->
+                <div class="flex justify-center mt-4">
+                    <button
+                        id="undoLastDartBtn"
+                        class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-md shadow-lg transition duration-300 ease-in-out transform hover:scale-105 opacity-50 cursor-not-allowed"
+                        disabled
+                    >
+                        Annuler la dernière fléchette
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Affichage du gagnant -->
+        <div id="winner-section" class="text-center p-6 bg-green-700 rounded-md shadow-xl border border-green-500 hidden">
+            <h2 class="text-3xl font-bold text-white mb-4">🎉 Félicitations 🎉</h2>
+            <p id="winner-name" class="text-4xl font-extrabold text-yellow-300 mb-6"></p>
+            <button
+                id="newGameWinnerBtn"
+                class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-md shadow-lg transition duration-300 ease-in-out transform hover:scale-105"
+            >
+                Nouveau Jeu
+            </button>
+        </div>
+
+        <!-- Messages d'erreur/information -->
+        <div id="message-section" class="mt-6 p-4 bg-red-600 rounded-md text-white text-center font-medium shadow-md hidden">
+            <span id="message-text"></span>
+        </div>
+
+        <!-- Historique des scores -->
+        <div id="history-section" class="mt-8 p-4 bg-gray-700 rounded-md border border-gray-600 hidden">
+            <h2 class="text-2xl font-bold mb-4 text-center text-cyan-300">Historique des Scores</h2>
+            <div id="history-content" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <!-- L'historique sera ajouté ici par JS -->
+            </div>
+        </div>
+
+        <!-- Bouton Réinitialiser le jeu (toujours visible après le début ou la fin du jeu) -->
+        <div id="reset-game-btn-container" class="mt-6 text-center hidden">
+            <button
+                id="resetGameBtn"
+                class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-md shadow-lg transition duration-300 ease-in-out transform hover:scale-105"
+            >
+                Réinitialiser le Jeu
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Global State
+        let players = [];
+        let newPlayerName = '';
+        let gameMode = 501;
+        let playerScores = {};
+        let currentPlayerIndex = 0;
+        let gameStarted = false;
+        let winner = null;
+        let message = '';
+        let history = {};
+
+        let doubleInActive = false;
+        let doubleOutActive = false;
+        let playerHasDoubledIn = {};
+
+        let currentDartsThrown = [];
+        let selectedMultiplier = 1; // 1: Simple, 2: Double, 3: Triple
+
+        // DOM Elements
+        const configSection = document.getElementById('config-section');
+        const gameSection = document.getElementById('game-section');
+        const winnerSection = document.getElementById('winner-section');
+        const messageSection = document.getElementById('message-section');
+        const messageText = document.getElementById('message-text');
+        const historySection = document.getElementById('history-section');
+        const resetGameBtnContainer = document.getElementById('reset-game-btn-container');
+
+        const newPlayerInput = document.getElementById('newPlayer');
+        const addPlayerBtn = document.getElementById('addPlayerBtn');
+        const playersListContainer = document.getElementById('players-list-container');
+        const playersList = document.getElementById('players-list');
+        const gameModeSelect = document.getElementById('gameMode');
+        const doubleInCheckbox = document.getElementById('doubleIn');
+        const doubleOutCheckbox = document.getElementById('doubleOut');
+        const startGameBtn = document.getElementById('startGameBtn');
+        const resetGameBtn = document.getElementById('resetGameBtn');
+        const newGameWinnerBtn = document.getElementById('newGameWinnerBtn');
+
+        const gameModeDisplay = document.getElementById('game-mode-display');
+        const playerScoresDisplay = document.getElementById('player-scores-display');
+        const currentPlayerNameDisplay = document.getElementById('current-player-name');
+        const dartsCountDisplay = document.getElementById('darts-count');
+        const currentDartsDisplay = document.getElementById('current-darts-display');
+        const selectedMultiplierDisplay = document.getElementById('selected-multiplier-display');
+        const multiplierSimpleBtn = document.getElementById('multiplier-simple');
+        const multiplierDoubleBtn = document.getElementById('multiplier-double');
+        const multiplierTripleBtn = document.getElementById('multiplier-triple');
+        const numberKeypad = document.getElementById('number-keypad');
+        const undoLastDartBtn = document.getElementById('undoLastDartBtn');
+        const winnerNameDisplay = document.getElementById('winner-name');
+        const historyContent = document.getElementById('history-content');
+
+        const numberButtons = [
+            1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+            11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+            25, 0 // Bullseye et Miss
+        ];
+
+        // Functions to update UI
+        function updateUI() {
+            // Toggle sections visibility
+            configSection.classList.toggle('hidden', gameStarted || winner);
+            gameSection.classList.toggle('hidden', !gameStarted || winner);
+            winnerSection.classList.toggle('hidden', !winner);
+            messageSection.classList.toggle('hidden', !message);
+            historySection.classList.toggle('hidden', !(gameStarted || winner) || players.length === 0);
+            resetGameBtnContainer.classList.toggle('hidden', !gameStarted && !winner);
+
+            // Update message
+            messageText.textContent = message;
+
+            // Update players list in config
+            renderPlayersList();
+
+            // Update game mode display
+            gameModeDisplay.textContent = `Jeu en Cours: ${gameMode}`;
+
+            // Update player scores display
+            renderPlayerScores();
+
+            // Update current player info
+            if (gameStarted && players.length > 0) {
+                currentPlayerNameDisplay.textContent = players[currentPlayerIndex];
+                dartsCountDisplay.textContent = currentDartsThrown.length;
+                currentDartsDisplay.textContent = currentDartsThrown.length > 0 ?
+                    currentDartsThrown.map(d => d.display).join(', ') : 'Aucune';
+                selectedMultiplierDisplay.textContent = selectedMultiplier === 2 ? 'Double' : selectedMultiplier === 3 ? 'Triple' : 'Simple';
+
+                // Update multiplier button styles
+                multiplierSimpleBtn.classList.toggle('bg-green-500', selectedMultiplier === 1);
+                multiplierSimpleBtn.classList.toggle('bg-gray-600', selectedMultiplier !== 1);
+                multiplierDoubleBtn.classList.toggle('bg-green-500', selectedMultiplier === 2);
+                multiplierDoubleBtn.classList.toggle('bg-gray-600', selectedMultiplier !== 2);
+                multiplierTripleBtn.classList.toggle('bg-green-500', selectedMultiplier === 3);
+                multiplierTripleBtn.classList.toggle('bg-gray-600', selectedMultiplier !== 3);
+
+                // Disable multiplier buttons if 3 darts thrown
+                const disableMultiplierButtons = currentDartsThrown.length >= 3;
+                multiplierSimpleBtn.disabled = disableMultiplierButtons;
+                multiplierDoubleBtn.disabled = disableMultiplierButtons;
+                multiplierTripleBtn.disabled = disableMultiplierButtons;
+                multiplierSimpleBtn.classList.toggle('opacity-50', disableMultiplierButtons);
+                multiplierSimpleBtn.classList.toggle('cursor-not-allowed', disableMultiplierButtons);
+                multiplierDoubleBtn.classList.toggle('opacity-50', disableMultiplierButtons);
+                multiplierDoubleBtn.classList.toggle('cursor-not-allowed', disableMultiplierButtons);
+                multiplierTripleBtn.classList.toggle('opacity-50', disableMultiplierButtons);
+                multiplierTripleBtn.classList.toggle('cursor-not-allowed', disableMultiplierButtons);
+
+                // Disable number buttons if 3 darts thrown
+                const disableNumberButtons = currentDartsThrown.length >= 3;
+                numberKeypad.querySelectorAll('button').forEach(button => {
+                    button.disabled = disableNumberButtons;
+                    button.classList.toggle('opacity-50', disableNumberButtons);
+                    button.classList.toggle('cursor-not-allowed', disableNumberButtons);
+                });
+
+                // Update undo button state
+                undoLastDartBtn.disabled = currentDartsThrown.length === 0;
+                undoLastDartBtn.classList.toggle('opacity-50', currentDartsThrown.length === 0);
+                undoLastDartBtn.classList.toggle('cursor-not-allowed', currentDartsThrown.length === 0);
+            }
+
+            // Update winner display
+            if (winner) {
+                winnerNameDisplay.textContent = `${winner} a gagné le jeu !`;
+            }
+
+            // Update history display
+            renderHistory();
+        }
+
+        function renderPlayersList() {
+            playersList.innerHTML = ''; // Clear existing list
+            if (players.length > 0) {
+                playersListContainer.classList.remove('hidden');
+                players.forEach((player, index) => {
+                    const li = document.createElement('li');
+                    li.className = 'flex justify-between items-center bg-gray-900 p-3 rounded-md border border-gray-600';
+                    li.innerHTML = `
+                        <span class="text-lg">${player}</span>
+                        <button
+                            data-player="${player}"
+                            class="bg-red-600 hover:bg-red-700 text-white p-2 rounded-full text-sm transition duration-300 ease-in-out transform hover:scale-110"
+                            title="Supprimer le joueur"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    `;
+                    playersList.appendChild(li);
+                });
+            } else {
+                playersListContainer.classList.add('hidden');
+            }
+        }
+
+        function renderPlayerScores() {
+            playerScoresDisplay.innerHTML = ''; // Clear existing scores
+            players.forEach((player, index) => {
+                const div = document.createElement('div');
+                div.className = `p-4 rounded-md shadow-md text-center transition duration-300 ease-in-out ${
+                    index === currentPlayerIndex ? 'bg-blue-600 border-blue-400 scale-105' : 'bg-gray-900 border-gray-600'
+                }`;
+                div.innerHTML = `
+                    <h3 class="text-xl font-semibold mb-2">${player}</h3>
+                    <p class="text-3xl font-extrabold text-green-400">${playerScores[player]}</p>
+                    ${doubleInActive && !playerHasDoubledIn[player] ? '<p class="text-sm text-yellow-200 mt-1">Doit faire un Double In !</p>' : ''}
+                `;
+                playerScoresDisplay.appendChild(div);
+            });
+        }
+
+        function renderNumberKeypad() {
+            numberKeypad.innerHTML = ''; // Clear existing buttons
+            numberButtons.forEach(num => {
+                const button = document.createElement('button');
+                button.textContent = num;
+                button.className = `p-3 rounded-md text-xl font-bold transition duration-200 ease-in-out bg-gray-600 hover:bg-gray-500 text-white`;
+                button.dataset.value = num; // Store the number value
+                numberKeypad.appendChild(button);
+            });
+        }
+
+        function renderHistory() {
+            historyContent.innerHTML = ''; // Clear existing history
+            players.forEach(player => {
+                const playerHistoryDiv = document.createElement('div');
+                playerHistoryDiv.className = 'bg-gray-900 p-4 rounded-md border border-gray-600';
+                playerHistoryDiv.innerHTML = `
+                    <h3 class="text-xl font-semibold mb-2 text-yellow-200">${player}</h3>
+                    <ul class="max-h-48 overflow-y-auto custom-scrollbar">
+                        ${history[player].map((entry, index) => `
+                            <li class="mb-1 text-gray-300">
+                                <span class="font-bold text-white">Tour ${index + 1}:</span> Fléchettes: ${entry.darts}, Score total: ${entry.scoreEntered}, Nouveau total: ${entry.newTotal}
+                                ${entry.message && `<span class="text-sm text-red-400 italic"> (${entry.message.replace(player + ' a fait un "bust" ! Son score reste à ' + playerScores[player] + '.', 'Bust!')})</span>`}
+                            </li>
+                        `).join('')}
+                    </ul>
+                `;
+                historyContent.appendChild(playerHistoryDiv);
+            });
+        }
+
+        // Game Logic Functions
+        function addPlayer() {
+            const name = newPlayerInput.value.trim();
+            if (name !== '' && !players.includes(name)) {
+                players.push(name);
+                newPlayerInput.value = '';
+                setMessage('');
+                updateUI();
+            } else if (name === '') {
+                setMessage('Veuillez entrer un nom de joueur.');
+            } else {
+                setMessage('Ce joueur existe déjà.');
+            }
+        }
+
+        function removePlayer(playerToRemove) {
+            players = players.filter(player => player !== playerToRemove);
+            delete playerScores[playerToRemove];
+            delete history[playerToRemove];
+            delete playerHasDoubledIn[playerToRemove];
+
+            // Adjust current player index if needed
+            if (currentPlayerIndex >= players.length && players.length > 0) {
+                currentPlayerIndex = 0;
+            } else if (players.length === 0) {
+                // If no players left, reset game completely
+                resetGame();
+                return;
+            }
+            setMessage('');
+            updateUI();
+        }
+
+        function startGame() {
+            if (players.length === 0) {
+                setMessage('Veuillez ajouter au moins un joueur avant de commencer.');
+                return;
+            }
+            gameStarted = true;
+            winner = null;
+            message = '';
+            gameMode = parseInt(gameModeSelect.value, 10);
+            doubleInActive = doubleInCheckbox.checked;
+            doubleOutActive = doubleOutCheckbox.checked;
+
+            // Initialize scores and double-in status for new game
+            playerScores = {};
+            history = {};
+            playerHasDoubledIn = {};
+            players.forEach(player => {
+                playerScores[player] = gameMode;
+                history[player] = [];
+                playerHasDoubledIn[player] = false;
+            });
+            currentPlayerIndex = 0;
+            currentDartsThrown = [];
+            selectedMultiplier = 1;
+
+            updateUI();
+        }
+
+        function resetGame() {
+            players = [];
+            newPlayerName = '';
+            gameMode = 501;
+            playerScores = {};
+            currentPlayerIndex = 0;
+            gameStarted = false;
+            winner = null;
+            message = '';
+            history = {};
+            doubleInActive = false;
+            doubleOutActive = false;
+            playerHasDoubledIn = {};
+            currentDartsThrown = [];
+            selectedMultiplier = 1;
+            currentDartValue = null; // Ensure this is reset
+
+            // Reset checkboxes and select
+            gameModeSelect.value = 501;
+            doubleInCheckbox.checked = false;
+            doubleOutCheckbox.checked = false;
+
+            updateUI();
+        }
+
+        function submitTurn(dartsForThisTurn) {
+            const currentPlayer = players[currentPlayerIndex];
+            let currentTotalScore = playerScores[currentPlayer];
+            let totalTurnScore = dartsForThisTurn.reduce((sum, dart) => sum + dart.score, 0);
+
+            let newScore = currentTotalScore - totalTurnScore;
+            let turnMessage = '';
+            let gameEnded = false;
+
+            // Handle "Double In" rule
+            if (doubleInActive && !playerHasDoubledIn[currentPlayer]) {
+                const hasHitDouble = dartsForThisTurn.some(dart => dart.multiplier === 2 && dart.value !== 0);
+                if (hasHitDouble) {
+                    playerHasDoubledIn[currentPlayer] = true;
+                    turnMessage = `${currentPlayer} a réussi son "Double In" !`;
+                    // Points are counted normally
+                } else {
+                    turnMessage = `${currentPlayer} n'a pas fait de "Double In". Le score de ${totalTurnScore} ne compte pas.`;
+                    newScore = currentTotalScore; // Score does not change
+                }
+            }
+
+            // Handle "bust" (score less than 0 or equal to 1)
+            if (newScore < 0 || newScore === 1) {
+                turnMessage = `${currentPlayer} a fait un "bust" ! Son score reste à ${currentTotalScore}.`;
+                newScore = currentTotalScore; // Score does not change on bust
+            } else if (newScore === 0) {
+                // Handle "Double Out" rule if active
+                if (doubleOutActive) {
+                    const lastDart = dartsForThisTurn[dartsForThisTurn.length - 1];
+                    if (lastDart && lastDart.multiplier === 2 && lastDart.value !== 0) { // Check if the last dart was a double (not a 0)
+                        turnMessage = `${currentPlayer} a gagné avec un "Double Out" !`;
+                        winner = currentPlayer;
+                        gameStarted = false;
+                        gameEnded = true;
+                    } else {
+                        turnMessage = `${currentPlayer} a fait un "bust" ! Doit terminer avec un "Double Out". Son score reste à ${currentTotalScore}.`;
+                        newScore = currentTotalScore; // Bust if no double out
+                    }
+                } else {
+                    turnMessage = `${currentPlayer} a gagné avec un "Straight Out" !`;
+                    winner = currentPlayer;
+                    gameStarted = false;
+                    gameEnded = true;
+                }
+            }
+
+            // Update scores and history
+            playerScores[currentPlayer] = newScore;
+            history[currentPlayer].push({
+                darts: dartsForThisTurn.map(d => d.display).join(', '),
+                scoreEntered: totalTurnScore,
+                newTotal: newScore,
+                message: turnMessage
+            });
+
+            // Reset states for the next turn
+            currentDartsThrown = [];
+            selectedMultiplier = 1;
+            currentDartValue = null;
+            message = turnMessage;
+
+            // Move to next player if game is not ended
+            if (!gameEnded) {
+                currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+            }
+            updateUI();
+        }
+
+        function handleMultiplierClick(multiplier) {
+            if (currentDartsThrown.length >= 3) {
+                setMessage('Vous avez déjà lancé 3 fléchettes pour ce tour.');
+                updateUI();
+                return;
+            }
+            selectedMultiplier = multiplier;
+            currentDartValue = null; // Reset value so user selects a number
+            setMessage(''); // Clear previous messages
+            updateUI();
+        }
+
+        function handleNumberClick(num) {
+            if (currentDartsThrown.length >= 3) {
+                setMessage('Vous avez déjà lancé 3 fléchettes pour ce tour.');
+                updateUI();
+                return;
+            }
+
+            // Specific validation for bullseye and triples
+            if (num === 25 && selectedMultiplier === 3) {
+                setMessage('Le Bullseye (25) ne peut pas être un Triple. Veuillez choisir Double ou Simple.');
+                updateUI();
+                return;
+            }
+            if (num === 0 && selectedMultiplier !== 1) {
+                setMessage('Un "miss" (0) ne peut pas être un Double ou Triple.');
+                updateUI();
+                return;
+            }
+
+            const displayMultiplier = selectedMultiplier === 2 ? 'D' : selectedMultiplier === 3 ? 'T' : '';
+            const dartScore = num * selectedMultiplier;
+
+            const newDartsThrown = [...currentDartsThrown, {
+                value: num,
+                multiplier: selectedMultiplier,
+                score: dartScore,
+                display: `${displayMultiplier}${num}`
+            }];
+
+            currentDartsThrown = newDartsThrown;
+
+            // Reset for the next dart
+            selectedMultiplier = 1; // Reset multiplier after dart added
+            currentDartValue = null; // Reset value after dart added
+            setMessage('');
+
+            // If 3 darts have been thrown, automatically submit the turn
+            if (currentDartsThrown.length === 3) {
+                submitTurn(currentDartsThrown);
+            } else {
+                updateUI(); // Update UI immediately after adding dart if turn not finished
+            }
+        }
+
+        function undoLastDart() {
+            if (currentDartsThrown.length > 0) {
+                currentDartsThrown.pop(); // Remove last dart
+                selectedMultiplier = 1; // Reset multiplier
+                currentDartValue = null; // Reset selected value
+                setMessage('');
+                updateUI();
+            } else {
+                setMessage('Aucune fléchette à annuler pour ce tour.');
+                updateUI();
+            }
+        }
+
+        // Event Listeners
+        addPlayerBtn.addEventListener('click', addPlayer);
+        newPlayerInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addPlayer();
+        });
+
+        playersList.addEventListener('click', (e) => {
+            if (e.target.closest('button')) {
+                const playerToRemove = e.target.closest('button').dataset.player;
+                if (playerToRemove) {
+                    removePlayer(playerToRemove);
+                }
+            }
+        });
+
+        startGameBtn.addEventListener('click', startGame);
+        resetGameBtn.addEventListener('click', resetGame);
+        newGameWinnerBtn.addEventListener('click', resetGame);
+
+        multiplierSimpleBtn.addEventListener('click', () => handleMultiplierClick(1));
+        multiplierDoubleBtn.addEventListener('click', () => handleMultiplierClick(2));
+        multiplierTripleBtn.addEventListener('click', () => handleMultiplierClick(3));
+
+        numberKeypad.addEventListener('click', (e) => {
+            if (e.target.tagName === 'BUTTON') {
+                const num = parseInt(e.target.dataset.value, 10);
+                handleNumberClick(num);
+            }
+        });
+
+        undoLastDartBtn.addEventListener('click', undoLastDart);
+
+        // Initial render on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            renderNumberKeypad(); // Render number buttons once
+            updateUI(); // Initial UI update
+        });
+
+    </script>
+</body>
+</html>
