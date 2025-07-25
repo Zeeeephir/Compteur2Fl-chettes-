@@ -225,7 +225,7 @@
         let currentPlayerIndex = 0;
         let gameStarted = false;
         let winner = null;
-        let message = '';
+        let message = ''; // This will be updated by the new setMessage function
         let history = {};
 
         let doubleInActive = false;
@@ -274,6 +274,12 @@
             11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
             25, 0 // Bullseye et Miss
         ];
+
+        // Helper function to set messages and update UI
+        function showMessage(msg) {
+            message = msg;
+            updateUI();
+        }
 
         // Functions to update UI
         function updateUI() {
@@ -427,12 +433,12 @@
             if (name !== '' && !players.includes(name)) {
                 players.push(name);
                 newPlayerInput.value = '';
-                setMessage('');
+                showMessage(''); // Use showMessage
                 updateUI();
             } else if (name === '') {
-                setMessage('Veuillez entrer un nom de joueur.');
+                showMessage('Veuillez entrer un nom de joueur.'); // Use showMessage
             } else {
-                setMessage('Ce joueur existe déjà.');
+                showMessage('Ce joueur existe déjà.'); // Use showMessage
             }
         }
 
@@ -450,18 +456,18 @@
                 resetGame();
                 return;
             }
-            setMessage('');
+            showMessage(''); // Use showMessage
             updateUI();
         }
 
         function startGame() {
             if (players.length === 0) {
-                setMessage('Veuillez ajouter au moins un joueur avant de commencer.');
+                showMessage('Veuillez ajouter au moins un joueur avant de commencer.'); // Use showMessage
                 return;
             }
             gameStarted = true;
             winner = null;
-            message = '';
+            message = ''; // Clear message
             gameMode = parseInt(gameModeSelect.value, 10);
             doubleInActive = doubleInCheckbox.checked;
             doubleOutActive = doubleOutCheckbox.checked;
@@ -490,14 +496,14 @@
             currentPlayerIndex = 0;
             gameStarted = false;
             winner = null;
-            message = '';
+            message = ''; // Clear message
             history = {};
             doubleInActive = false;
             doubleOutActive = false;
             playerHasDoubledIn = {};
             currentDartsThrown = [];
             selectedMultiplier = 1;
-            currentDartValue = null; // Ensure this is reset
+            // currentDartValue = null; // Ensure this is reset - this variable is not used to store selected value anymore
 
             // Reset checkboxes and select
             gameModeSelect.value = 501;
@@ -566,8 +572,8 @@
             // Reset states for the next turn
             currentDartsThrown = [];
             selectedMultiplier = 1;
-            currentDartValue = null;
-            message = turnMessage;
+            // currentDartValue = null; // Not needed anymore
+            showMessage(turnMessage); // Use showMessage
 
             // Move to next player if game is not ended
             if (!gameEnded) {
@@ -578,31 +584,31 @@
 
         function handleMultiplierClick(multiplier) {
             if (currentDartsThrown.length >= 3) {
-                setMessage('Vous avez déjà lancé 3 fléchettes pour ce tour.');
+                showMessage('Vous avez déjà lancé 3 fléchettes pour ce tour.'); // Use showMessage
                 updateUI();
                 return;
             }
             selectedMultiplier = multiplier;
-            currentDartValue = null; // Reset value so user selects a number
-            setMessage(''); // Clear previous messages
+            // currentDartValue = null; // Not needed anymore
+            showMessage(''); // Clear previous messages
             updateUI();
         }
 
         function handleNumberClick(num) {
             if (currentDartsThrown.length >= 3) {
-                setMessage('Vous avez déjà lancé 3 fléchettes pour ce tour.');
+                showMessage('Vous avez déjà lancé 3 fléchettes pour ce tour.'); // Use showMessage
                 updateUI();
                 return;
             }
 
             // Specific validation for bullseye and triples
             if (num === 25 && selectedMultiplier === 3) {
-                setMessage('Le Bullseye (25) ne peut pas être un Triple. Veuillez choisir Double ou Simple.');
+                showMessage('Le Bullseye (25) ne peut pas être un Triple. Veuillez choisir Double ou Simple.'); // Use showMessage
                 updateUI();
                 return;
             }
             if (num === 0 && selectedMultiplier !== 1) {
-                setMessage('Un "miss" (0) ne peut pas être un Double ou Triple.');
+                showMessage('Un "miss" (0) ne peut pas être un Double ou Triple.'); // Use showMessage
                 updateUI();
                 return;
             }
@@ -621,8 +627,8 @@
 
             // Reset for the next dart
             selectedMultiplier = 1; // Reset multiplier after dart added
-            currentDartValue = null; // Reset value after dart added
-            setMessage('');
+            // currentDartValue = null; // Not needed anymore
+            showMessage(''); // Clear message
 
             // If 3 darts have been thrown, automatically submit the turn
             if (currentDartsThrown.length === 3) {
@@ -636,11 +642,11 @@
             if (currentDartsThrown.length > 0) {
                 currentDartsThrown.pop(); // Remove last dart
                 selectedMultiplier = 1; // Reset multiplier
-                currentDartValue = null; // Reset selected value
-                setMessage('');
+                // currentDartValue = null; // Not needed anymore
+                showMessage(''); // Clear message
                 updateUI();
             } else {
-                setMessage('Aucune fléchette à annuler pour ce tour.');
+                showMessage('Aucune fléchette à annuler pour ce tour.'); // Use showMessage
                 updateUI();
             }
         }
