@@ -831,30 +831,24 @@
             return "";
         }
 
-        // Ensure voices are loaded and set the flag
-        speechSynth.onvoiceschanged = () => {
+        // Voice loading logic
+        function loadVoices() {
             voices = speechSynth.getVoices();
             if (voices.length > 0) {
-                areVoicesLoaded = true; // Set flag once voices are loaded
-                // Clear the interval once voices are loaded
+                areVoicesLoaded = true;
                 if (voiceLoadInterval) {
                     clearInterval(voiceLoadInterval);
                     voiceLoadInterval = null;
                 }
-            }
-            // Prioritize a male French voice
-            const maleFrenchVoice = voices.find(voice => voice.lang === 'fr-FR' && (voice.name.includes('male') || voice.name.includes('Male') || voice.name.includes('homme') || voice.name.includes('Homme')));
-            const frenchVoice = voices.find(voice => voice.lang === 'fr-FR');
-
-            if (maleFrenchVoice) {
-                console.log("Voix masculine française trouvée :", maleFrenchVoice.name);
-            } else if (frenchVoice) {
-                console.warn("Aucune voix masculine française trouvée, utilisation d'une voix française par défaut :", frenchVoice.name);
+                console.log("Voices loaded successfully.");
+                processSpeechQueue(); // Process any pending messages
             } else {
-                console.warn("Aucune voix française trouvée, utilisation de la première voix disponible.");
+                console.log("No voices available yet, trying again...");
             }
-            processSpeechQueue(); // Try to process any pending messages once voices are loaded
-        };
+        }
+
+        // Ensure voices are loaded and set the flag
+        speechSynth.onvoiceschanged = loadVoices; // Assign the function directly
 
         // DOM Elements
         const configSection = document.getElementById('config-section');
@@ -940,10 +934,11 @@
         function speakMessage(text) {
             if (isVoiceActive && speechSynth) {
                 speakingQueue.push(text);
-                // Only try to process immediately if voices are loaded to avoid issues.
-                // Otherwise, processSpeechQueue will be called by onvoiceschanged when ready.
                 if (areVoicesLoaded && !isSpeaking) {
                     processSpeechQueue();
+                } else if (!areVoicesLoaded) {
+                    console.warn("Speech requested but voices not loaded. Queuing message.");
+                    showMessage("La voix de l'IA n'est pas prête. Veuillez patienter.");
                 }
             }
         }
@@ -958,23 +953,32 @@
                 isSpeaking = true;
                 const text = speakingQueue.shift();
 
-                // Cancel any ongoing speech before starting a new one
-                speechSynth.cancel();
+                speechSynth.cancel(); // Cancel any ongoing speech before starting a new one
 
                 const utterance = new SpeechSynthesisUtterance(text);
 
                 let selectedVoice = null;
-                // Prioritize a male French voice
-                const maleFrenchVoice = voices.find(voice => voice.lang === 'fr-FR' && (voice.name.includes('male') || voice.name.includes('Male') || voice.name.includes('homme') || voice.name.includes('Homme')));
-                const frenchVoice = voices.find(voice => voice.lang === 'fr-FR');
+                // Prioritize a male French voice that doesn't sound too "duck-like"
+                // Look for voices with 'fr-FR' and common male descriptors, avoiding 'robot' or 'duck' if possible.
+                const preferredMaleFrenchVoices = voices.filter(voice =>
+                    voice.lang === 'fr-FR' &&
+                    (voice.name.includes('male') || voice.name.includes('Male') || voice.name.includes('homme') || voice.name.includes('Homme')) &&
+                    !(voice.name.includes('robot') || voice.name.includes('duck') || voice.name.includes('synth')) // Avoid robotic/unnatural names
+                );
 
-                if (maleFrenchVoice) {
-                    selectedVoice = maleFrenchVoice;
-                } else if (frenchVoice) {
-                    selectedVoice = frenchVoice;
+                const generalFrenchVoices = voices.filter(voice => voice.lang === 'fr-FR');
+
+                if (preferredMaleFrenchVoices.length > 0) {
+                    selectedVoice = preferredMaleFrenchVoices[0];
+                    console.log("Selected preferred male French voice:", selectedVoice.name);
+                } else if (generalFrenchVoices.length > 0) {
+                    // Fallback to any French voice, prioritizing male if available
+                    selectedVoice = generalFrenchVoices.find(voice => (voice.name.includes('male') || voice.name.includes('Male') || voice.name.includes('homme') || voice.name.includes('Homme'))) || generalFrenchVoices[0];
+                    console.warn("No preferred male French voice found, using general French voice:", selectedVoice.name);
                 } else if (voices.length > 0) {
+                    // Fallback to any available voice if no French voice is found
                     selectedVoice = voices[0];
-                    console.warn("Aucune voix française trouvée, utilisation de la première voix disponible :", selectedVoice.name);
+                    console.warn("No French voice found, using first available voice:", selectedVoice.name);
                 } else {
                     console.warn("Aucune voix vocale disponible sur ce système après chargement.");
                     isSpeaking = false;
@@ -985,7 +989,7 @@
                 if (selectedVoice) {
                     utterance.voice = selectedVoice;
                 }
-                utterance.lang = 'fr-FR';
+                utterance.lang = 'fr-FR'; // Ensure language is set even if voice is not French
                 utterance.pitch = 1;
                 utterance.rate = 1;
 
@@ -2038,28 +2042,12 @@
             updateRuleOptionsVisibility(); // Call initially to set correct visibility
             updateUI(); // Initial UI update
 
-            // Explicitly call getVoices() once to potentially kickstart voice loading
-            // on some browsers, though onvoiceschanged should handle it.
-            if (speechSynth) {
-                voices = speechSynth.getVoices(); // Try to get voices immediately
-                if (voices.length > 0) {
-                    areVoicesLoaded = true;
-                    console.log("Voices loaded on DOMContentLoaded.");
-                } else {
-                    // If no voices immediately, set up a polling interval
-                    voiceLoadInterval = setInterval(() => {
-                        voices = speechSynth.getVoices();
-                        if (voices.length > 0) {
-                            areVoicesLoaded = true;
-                            console.log("Voices loaded via polling.");
-                            clearInterval(voiceLoadInterval);
-                            voiceLoadInterval = null;
-                            processSpeechQueue(); // Process any pending messages
-                        } else {
-                            console.log("Polling for voices... still not loaded.");
-                        }
-                    }, 500); // Check every 500ms
-                }
+            // Attempt to load voices immediately
+            loadVoices();
+
+            // If voices are not immediately available, set up a polling interval
+            if (!areVoicesLoaded && speechSynth) {
+                voiceLoadInterval = setInterval(loadVoices, 500); // Check every 500ms
             }
         });
 
