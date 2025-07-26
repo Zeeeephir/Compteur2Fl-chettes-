@@ -8,6 +8,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts - Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome CDN for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -33,6 +35,7 @@
         }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
             background: #555;
+            cursor: pointer;
         }
 
         /* Enhanced button styles with more pronounced effects */
@@ -44,6 +47,8 @@
             transition: all 0.3s ease-in-out;
             border: none;
             cursor: pointer;
+            position: relative; /* For ripple effect */
+            overflow: hidden; /* For ripple effect */
         }
         .btn-gradient:hover {
             background-position: right center; /* Change the gradient position */
@@ -88,6 +93,7 @@
         input:focus, select:focus {
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5); /* Blue 500 with transparency */
             border-color: #3b82f6;
+            outline: none; /* Remove default outline */
         }
         /* Style for the statistics canvas */
         #dartboardCanvas {
@@ -95,6 +101,22 @@
             border-radius: 0.5rem;
             margin: 0 auto; /* Center the canvas */
             display: block; /* Ensure it behaves like a block element for centering */
+        }
+
+        /* Ripple effect for buttons */
+        .ripple {
+            background-color: rgba(255, 255, 255, 0.7);
+            position: absolute;
+            border-radius: 50%;
+            transform: scale(0);
+            animation: ripple-animation 0.6s linear;
+        }
+
+        @keyframes ripple-animation {
+            to {
+                transform: scale(2.5);
+                opacity: 0;
+            }
         }
     </style>
 </head>
@@ -120,12 +142,14 @@
                         id="newPlayer"
                         class="flex-grow p-3 rounded-md bg-gray-900 border border-gray-600 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="Nom du joueur"
+                        aria-label="Nom du nouveau joueur"
                     />
                     <button
                         id="addPlayerBtn"
-                        class="btn-gradient btn-primary text-white font-bold py-3 px-6 rounded-md"
+                        class="btn-gradient btn-primary text-white font-bold py-3 px-6 rounded-md flex items-center justify-center gap-2"
+                        aria-label="Ajouter un nouveau joueur"
                     >
-                        Ajouter
+                        <i class="fas fa-user-plus"></i> Ajouter
                     </button>
                 </div>
             </div>
@@ -146,6 +170,7 @@
                 <select
                     id="gameMode"
                     class="w-full p-3 rounded-md bg-gray-900 border border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    aria-label="Sélectionner le mode de jeu"
                 >
                     <option value="301">301</option>
                     <option value="501">501</option>
@@ -163,6 +188,7 @@
                         type="checkbox"
                         id="doubleIn"
                         class="form-checkbox h-5 w-5 text-blue-600 rounded"
+                        aria-label="Activer la règle Double In"
                     />
                     <label for="doubleIn" class="ml-2 text-lg text-gray-200">Double In</label>
                 </div>
@@ -171,6 +197,7 @@
                         type="checkbox"
                         id="doubleOut"
                         class="form-checkbox h-5 w-5 text-blue-600 rounded"
+                        aria-label="Activer la règle Double Out"
                     />
                     <label for="doubleOut" class="ml-2 text-lg text-gray-200">Double Out</label>
                 </div>
@@ -180,6 +207,7 @@
                         id="enableVoice"
                         class="form-checkbox h-5 w-5 text-blue-600 rounded"
                         checked
+                        aria-label="Activer la voix de l'IA"
                     />
                     <label for="enableVoice" class="ml-2 text-lg text-gray-200">Activer la voix de l'IA</label>
                 </div>
@@ -188,9 +216,10 @@
             <!-- Bouton Démarrer le jeu -->
             <button
                 id="startGameBtn"
-                class="btn-gradient btn-success w-full text-white font-bold py-3 px-6 rounded-md"
+                class="btn-gradient btn-success w-full text-white font-bold py-3 px-6 rounded-md flex items-center justify-center gap-2"
+                aria-label="Démarrer le jeu"
             >
-                Démarrer le Jeu
+                <i class="fas fa-play-circle"></i> Démarrer le Jeu
             </button>
         </div>
 
@@ -227,18 +256,21 @@
                     <button
                         id="multiplier-simple"
                         class="p-3 rounded-md text-xl font-bold w-24 btn-gradient btn-info"
+                        aria-label="Sélectionner multiplicateur simple"
                     >
                         Simple (S)
                     </button>
                     <button
                         id="multiplier-double"
                         class="p-3 rounded-md text-xl font-bold w-24 btn-gradient btn-dark-gradient"
+                        aria-label="Sélectionner multiplicateur double"
                     >
                         Double (D)
                     </button>
                     <button
                         id="multiplier-triple"
                         class="p-3 rounded-md text-xl font-bold w-24 btn-gradient btn-dark-gradient"
+                        aria-label="Sélectionner multiplicateur triple"
                     >
                         Triple (T)
                     </button>
@@ -253,10 +285,11 @@
                 <div class="flex justify-center mt-4">
                     <button
                         id="undoLastDartBtn"
-                        class="btn-gradient btn-danger font-bold py-3 px-8 rounded-md opacity-50 cursor-not-allowed"
+                        class="btn-gradient btn-danger font-bold py-3 px-8 rounded-md opacity-50 cursor-not-allowed flex items-center justify-center gap-2"
                         disabled
+                        aria-label="Annuler la dernière fléchette lancée"
                     >
-                        Annuler la dernière fléchette
+                        <i class="fas fa-undo"></i> Annuler la dernière fléchette
                     </button>
                 </div>
             </div>
@@ -268,20 +301,22 @@
             <p id="winner-name" class="text-4xl font-extrabold text-yellow-300 mb-6"></p>
             <button
                 id="newGameWinnerBtn"
-                class="btn-gradient btn-primary text-white font-bold py-3 px-8 rounded-md"
+                class="btn-gradient btn-primary text-white font-bold py-3 px-8 rounded-md flex items-center justify-center gap-2"
+                aria-label="Démarrer un nouveau jeu"
             >
-                Nouveau Jeu
+                <i class="fas fa-redo-alt"></i> Nouveau Jeu
             </button>
             <button
                 id="showStatsBtn"
-                class="btn-gradient btn-info text-white font-bold py-3 px-8 rounded-md mt-4 ml-4"
+                class="btn-gradient btn-info text-white font-bold py-3 px-8 rounded-md mt-4 ml-4 flex items-center justify-center gap-2"
+                aria-label="Afficher les statistiques de la partie"
             >
-                Statistiques
+                <i class="fas fa-chart-bar"></i> Statistiques
             </button>
         </div>
 
         <!-- Messages d'erreur/information -->
-        <div id="message-section" class="mt-6 p-4 bg-red-600 rounded-md text-white text-center font-medium shadow-md hidden">
+        <div id="message-section" class="mt-6 p-4 bg-red-600 rounded-md text-white text-center font-medium shadow-md hidden" role="alert" aria-live="polite">
             <span id="message-text"></span>
         </div>
 
@@ -302,9 +337,10 @@
             <div class="flex justify-center">
                 <button
                     id="backToMainFromStatsBtn"
-                    class="btn-gradient btn-primary text-white font-bold py-3 px-8 rounded-md"
+                    class="btn-gradient btn-primary text-white font-bold py-3 px-8 rounded-md flex items-center justify-center gap-2"
+                    aria-label="Retourner au menu principal depuis les statistiques"
                 >
-                    Retour au menu principal
+                    <i class="fas fa-arrow-left"></i> Retour au menu principal
                 </button>
             </div>
         </div>
@@ -313,9 +349,10 @@
         <div id="reset-game-btn-container" class="mt-6 text-center hidden">
             <button
                 id="resetGameBtn"
-                class="btn-gradient btn-danger font-bold py-3 px-8 rounded-md"
+                class="btn-gradient btn-danger font-bold py-3 px-8 rounded-md flex items-center justify-center gap-2"
+                aria-label="Réinitialiser complètement le jeu"
             >
-                Réinitialiser le Jeu
+                <i class="fas fa-power-off"></i> Réinitialiser le Jeu
             </button>
         </div>
     </div>
@@ -601,6 +638,25 @@
             25, 0 // Bullseye et Miss
         ];
 
+        // Function to create a ripple effect on button click
+        function createRipple(event) {
+            const button = event.currentTarget;
+            const circle = document.createElement('span');
+            const diameter = Math.max(button.clientWidth, button.clientHeight);
+            const radius = diameter / 2;
+
+            circle.style.width = circle.style.height = `${diameter}px`;
+            circle.style.left = `${event.clientX - (button.offsetLeft + radius)}px`;
+            circle.style.top = `${event.clientY - (button.offsetTop + radius)}px`;
+            circle.classList.add('ripple');
+
+            const ripple = button.getElementsByClassName('ripple')[0];
+            if (ripple) {
+                ripple.remove();
+            }
+            button.appendChild(circle);
+        }
+
         // Helper function to set messages and update UI
         function showMessage(msg) {
             message = msg;
@@ -746,12 +802,11 @@
                         <span class="text-lg text-gray-100">${player}</span>
                         <button
                             data-player="${player}"
-                            class="bg-red-600 hover:bg-red-700 text-white p-2 rounded-full text-sm transition duration-300 ease-in-out transform hover:scale-110"
+                            class="bg-red-600 hover:bg-red-700 text-white p-2 rounded-full text-sm transition duration-300 ease-in-out transform hover:scale-110 flex items-center justify-center"
                             title="Supprimer le joueur"
+                            aria-label="Supprimer le joueur ${player}"
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
+                            <i class="fas fa-times"></i>
                         </button>
                     `;
                     playersList.appendChild(li);
@@ -790,6 +845,7 @@
                 button.textContent = num;
                 button.className = `p-3 rounded-lg text-xl font-bold btn-gradient btn-dark-gradient`;
                 button.dataset.value = num; // Store the number value
+                button.setAttribute('aria-label', `Entrer le score ${num}`);
                 numberKeypad.appendChild(button);
             });
         }
@@ -853,7 +909,8 @@
                 if (currentPlayerIndex >= players.length) { // If current index is out of bounds
                     currentPlayerIndex = 0; // Reset to first player
                 }
-            } else { // No players left
+            }
+             else { // No players left
                 resetGame();
                 return;
             }
@@ -1391,25 +1448,13 @@
                 const endAngle = (Math.PI / 10) * (i + 1) - Math.PI / 20;
                 const segmentValue = segmentOrder[i];
 
-                // Draw Outer Single (between double and triple)
+                // Draw Outer Single (between triple and double)
                 ctx.beginPath();
-                ctx.arc(centerX, centerY, doubleRing, startAngle, endAngle);
-                ctx.lineTo(centerX + Math.cos(endAngle) * tripleOuterRing, centerY + Math.sin(endAngle) * tripleOuterRing);
-                ctx.arc(centerX, centerY, tripleOuterRing, endAngle, startAngle, true);
+                ctx.arc(centerX, centerY, tripleRing, startAngle, endAngle);
+                ctx.lineTo(centerX + Math.cos(endAngle) * singleInnerRing, centerY + Math.sin(endAngle) * singleInnerRing);
+                ctx.arc(centerX, centerY, singleInnerRing, endAngle, startAngle, true);
                 ctx.closePath();
-                ctx.fillStyle = getHitColor((hitSegments[segmentValue] ? hitSegments[segmentValue].simple : 0) + (hitSegments[segmentValue] ? hitSegments[segmentValue].double : 0) + (hitSegments[segmentValue] ? hitSegments[segmentValue].triple : 0)); // Sum all hits for general segment color
-                ctx.fill();
-                ctx.strokeStyle = '#333';
-                ctx.lineWidth = 1;
-                ctx.stroke();
-
-                // Draw Double Ring
-                ctx.beginPath();
-                ctx.arc(centerX, centerY, doubleOuterRing, startAngle, endAngle);
-                ctx.lineTo(centerX + Math.cos(endAngle) * doubleRing, centerY + Math.sin(endAngle) * doubleRing);
-                ctx.arc(centerX, centerY, doubleRing, endAngle, startAngle, true);
-                ctx.closePath();
-                ctx.fillStyle = getHitColor(hitSegments[segmentValue] ? hitSegments[segmentValue].double : 0);
+                ctx.fillStyle = getHitColor(hitSegments[segmentValue] ? hitSegments[segmentValue].simple : 0); // Color based on simple hits
                 ctx.fill();
                 ctx.strokeStyle = '#333';
                 ctx.lineWidth = 1;
@@ -1421,7 +1466,19 @@
                 ctx.lineTo(centerX + Math.cos(endAngle) * tripleRing, centerY + Math.sin(endAngle) * tripleRing);
                 ctx.arc(centerX, centerY, tripleRing, endAngle, startAngle, true);
                 ctx.closePath();
-                ctx.fillStyle = getHitColor(hitSegments[segmentValue] ? hitSegments[segmentValue].triple : 0);
+                ctx.fillStyle = getHitColor(hitSegments[segmentValue] ? hitSegments[segmentValue].triple : 0); // Color based on triple hits
+                ctx.fill();
+                ctx.strokeStyle = '#333';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+
+                // Draw Double Ring
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, doubleOuterRing, startAngle, endAngle);
+                ctx.lineTo(centerX + Math.cos(endAngle) * doubleRing, centerY + Math.sin(endAngle) * doubleRing);
+                ctx.arc(centerX, centerY, doubleRing, endAngle, startAngle, true);
+                ctx.closePath();
+                ctx.fillStyle = getHitColor(hitSegments[segmentValue] ? hitSegments[segmentValue].double : 0); // Color based on double hits
                 ctx.fill();
                 ctx.strokeStyle = '#333';
                 ctx.lineWidth = 1;
@@ -1466,19 +1523,44 @@
         backToMainFromStatsBtn.addEventListener('click', hideStatsPage);
 
         // Event Listeners for existing buttons
-        addPlayerBtn.addEventListener('click', addPlayer);
-        startGameBtn.addEventListener('click', startGame);
-        resetGameBtn.addEventListener('click', resetGame);
-        newGameWinnerBtn.addEventListener('click', resetGame);
-        undoLastDartBtn.addEventListener('click', undoLastDart);
+        addPlayerBtn.addEventListener('click', (event) => {
+            createRipple(event); // Add ripple effect
+            addPlayer();
+        });
+        startGameBtn.addEventListener('click', (event) => {
+            createRipple(event); // Add ripple effect
+            startGame();
+        });
+        resetGameBtn.addEventListener('click', (event) => {
+            createRipple(event); // Add ripple effect
+            resetGame();
+        });
+        newGameWinnerBtn.addEventListener('click', (event) => {
+            createRipple(event); // Add ripple effect
+            resetGame();
+        });
+        undoLastDartBtn.addEventListener('click', (event) => {
+            createRipple(event); // Add ripple effect
+            undoLastDart();
+        });
 
-        multiplierSimpleBtn.addEventListener('click', () => handleMultiplierClick(1));
-        multiplierDoubleBtn.addEventListener('click', () => handleMultiplierClick(2));
-        multiplierTripleBtn.addEventListener('click', () => handleMultiplierClick(3));
+        multiplierSimpleBtn.addEventListener('click', (event) => {
+            createRipple(event); // Add ripple effect
+            handleMultiplierClick(1);
+        });
+        multiplierDoubleBtn.addEventListener('click', (event) => {
+            createRipple(event); // Add ripple effect
+            handleMultiplierClick(2);
+        });
+        multiplierTripleBtn.addEventListener('click', (event) => {
+            createRipple(event); // Add ripple effect
+            handleMultiplierClick(3);
+        });
 
         // Event listener for number keypad buttons (delegation)
         numberKeypad.addEventListener('click', (event) => {
             if (event.target.tagName === 'BUTTON' && event.target.dataset.value !== undefined) {
+                createRipple(event); // Add ripple effect
                 handleNumberClick(event);
             }
         });
@@ -1486,6 +1568,7 @@
         // Event listener for removing players from the list
         playersList.addEventListener('click', (event) => {
             if (event.target.closest('button') && event.target.closest('button').dataset.player) {
+                createRipple(event); // Add ripple effect
                 const playerToRemove = event.target.closest('button').dataset.player;
                 removePlayer(playerToRemove);
             }
