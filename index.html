@@ -635,7 +635,7 @@
         const enableVoiceCheckbox = document.getElementById('enableVoice'); // New checkbox
         const startGameBtn = document.getElementById('startGameBtn');
         const resetGameBtn = document.getElementById('resetGameBtn');
-        const newGameWinnerBtn = document = document.getElementById('newGameWinnerBtn');
+        const newGameWinnerBtn = document.getElementById('newGameWinnerBtn');
         const showStatsBtn = document.getElementById('showStatsBtn'); // New stats button
         const backToMainFromStatsBtn = document.getElementById('backToMainFromStatsBtn'); // New back button
 
@@ -998,6 +998,7 @@
             } else if (atcMode) {
                 initialMessage += ` Votre cible est le numéro ${playerScores[players[currentPlayerIndex]] === 25 ? 'Bullseye' : playerScores[players[currentPlayerIndex]]}.`;
             }
+            // Keep the initial AI comment for the very start of the game
             initialMessage += ` ${aiComments[Math.floor(Math.random() * aiComments.length)]}`;
             speakMessage(initialMessage);
         }
@@ -1234,7 +1235,7 @@
                 } else if (atcMode) { // Announce next target for ATC
                     msg += ` Votre cible est le numéro ${nextPlayerScore === 25 ? 'Bullseye' : nextPlayerScore}.`;
                 }
-                msg += ` ${aiComments[Math.floor(Math.random() * aiComments.length)]}`;
+                // Removed: msg += ` ${aiComments[Math.floor(Math.random() * aiComments.length)]}`; // This line is removed as per request
                 speakMessage(msg); // Add next turn announcement to speech queue
             } else {
                 updateUI(); // Update UI immediately if game ended (winner screen)
