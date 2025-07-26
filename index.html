@@ -740,7 +740,7 @@
                 div.innerHTML = `
                     <h3 class="text-xl font-semibold mb-2 text-white">${player}</h3>
                     <p class="text-4xl font-extrabold text-green-400">${scoreDisplay}</p>
-                    ${doubleInActive && !playerHasDoubledIn[player] && (gameMode === 301 || gameMode === 501) ? '<p class="text-sm text-yellow-200 mt-1">Doit faire un Double In !</p>' : ''}
+                    ${doubleInActive && !playerHasDoubledIn[player] && (gameMode === '301' || gameMode === '501') ? '<p class="text-sm text-yellow-200 mt-1">Doit faire un Double In !</p>' : ''}
                 `;
                 playerScoresDisplay.appendChild(div);
             });
@@ -786,7 +786,7 @@
                 players.push(name);
                 // Initialize score and history for the new player immediately
                 // For ATC, initial score is 1 (first target)
-                playerScores[name] = (gameMode.startsWith('atc_')) ? 1 : parseInt(gameMode, 10);
+                playerScores[name] = (String(gameMode).startsWith('atc_')) ? 1 : parseInt(gameMode, 10);
                 history[name] = []; // Initialize with an empty array
                 playerHasDoubledIn[name] = false; // Initialize double-in status
                 newPlayerInput.value = '';
@@ -832,7 +832,7 @@
             isVoiceActive = enableVoiceCheckbox.checked; // Get voice setting
 
             // Determine ATC mode
-            if (gameMode.startsWith('atc_')) {
+            if (String(gameMode).startsWith('atc_')) {
                 atcMode = gameMode.split('_')[1]; // 'any', 'doubles', 'triples'
             } else {
                 atcMode = null;
@@ -893,12 +893,14 @@
 
         function submitTurn(dartsForThisTurn) {
             const currentPlayer = players[currentPlayerIndex];
-            let currentTotalScore = playerScores[currentPlayer]; // This will be the current target for ATC
-            let totalTurnScore = dartsForThisTurn.reduce((sum, dart) => sum + dart.score, 0);
+            let scoreBeforeTurn = playerScores[currentPlayer]; // Store score at the beginning of the turn
+            let currentScoreDuringTurn = scoreBeforeTurn; // Track score as darts are processed
+            let dartsThatCounted = []; // To store darts that actually reduced score
+            let pointsDeductedThisTurn = 0; // For 301/501, actual points deducted
+            let winOccurred = false;
+            let bustOccurred = false;
 
-            let newScore = currentTotalScore; // Default for ATC, or calculated for 301/501
-            let turnMessage = '';
-            let gameEnded = false;
+            let turnMessage = ''; // Main message for the turn (bust, double in, win, etc.)
             let aiVoiceMessages = [];
 
             if (atcMode) {
@@ -929,8 +931,7 @@
                     }
                 }
 
-                newScore = nextTargetToHit; // Update player's target
-                playerScores[currentPlayer] = newScore; // Update global state
+                playerScores[currentPlayer] = nextTargetToHit; // Update player's target
 
                 if (gameEnded) {
                     turnMessage = `${currentPlayer} a gagné le Around the Clock !`;
@@ -950,70 +951,100 @@
                 }
 
             } else { // 301/501 game mode logic
-                newScore = currentTotalScore - totalTurnScore;
+                for (let i = 0; i < dartsForThisTurn.length; i++) {
+                    const dart = dartsForThisTurn[i];
+                    let dartScoreToDeduct = 0;
+                    let dartCounts = true; // Flag if this dart contributes to score deduction
 
-                // Handle "Double In" rule
-                if (doubleInActive && !playerHasDoubledIn[currentPlayer]) {
-                    const hasHitDouble = dartsForThisTurn.some(dart => dart.multiplier === 2 && dart.value !== 0);
-                    if (hasHitDouble) {
-                        playerHasDoubledIn[currentPlayer] = true;
-                        turnMessage = `${currentPlayer} a réussi son "Double In" !`;
-                        aiVoiceMessages.push(turnMessage);
-                        // Points are counted normally
-                    } else {
-                        turnMessage = `${currentPlayer} n'a pas fait de "Double In". Le score de ${totalTurnScore} ne compte pas.`;
-                        newScore = currentTotalScore; // Score does not change
-                        aiVoiceMessages.push(turnMessage);
-                    }
-                }
-
-                // Handle "bust" (score less than 0 or equal to 1)
-                if (newScore < 0 || newScore === 1) {
-                    turnMessage = `${currentPlayer} a fait un "bust" ! Son score reste à ${currentTotalScore}.`;
-                    newScore = currentTotalScore; // Score does not change on bust
-                    aiVoiceMessages.push(turnMessage);
-                } else if (newScore === 0) {
-                    // Handle "Double Out" rule if active
-                    if (doubleOutActive) {
-                        const lastDart = dartsForThisTurn[dartsForThisTurn.length - 1];
-                        if (lastDart && lastDart.multiplier === 2 && lastDart.value !== 0) { // Check if the last dart was a double (not a 0)
-                            turnMessage = `${currentPlayer} a gagné avec un "Double Out" !`;
-                            winner = currentPlayer;
-                            gameStarted = false;
-                            gameEnded = true;
-                            aiVoiceMessages.push(`${currentPlayer} a gagné avec un Double Out ! Félicitations !`);
+                    // Handle Double In logic
+                    if (doubleInActive && !playerHasDoubledIn[currentPlayer]) {
+                        if (dart.multiplier === 2 && dart.value !== 0) {
+                            playerHasDoubledIn[currentPlayer] = true;
+                            aiVoiceMessages.push(`${currentPlayer} a réussi son "Double In" !`);
+                            dartScoreToDeduct = dart.score;
                         } else {
-                            turnMessage = `${currentPlayer} a fait un "bust" ! Doit terminer avec un "Double Out". Son score reste à ${currentTotalScore}.`;
-                            newScore = currentTotalScore; // Bust if no double out
-                            aiVoiceMessages.push(turnMessage);
+                            dartCounts = false; // This dart doesn't count for score deduction
+                            aiVoiceMessages.push(`Fléchette ${i + 1} (${dart.display}) ne compte pas. ${currentPlayer} doit faire un Double In.`);
                         }
                     } else {
-                        turnMessage = `${currentPlayer} a gagné avec un "Straight Out" !`;
-                        winner = currentPlayer;
-                        gameStarted = false;
-                        gameEnded = true;
-                        aiVoiceMessages.push(`${currentPlayer} a gagné avec un Straight Out ! Bravo !`);
+                        dartScoreToDeduct = dart.score;
+                    }
+
+                    if (dartCounts) {
+                        currentScoreDuringTurn -= dartScoreToDeduct;
+                        pointsDeductedThisTurn += dartScoreToDeduct;
+                        // No need to add to dartsThatCounted if we are just tracking total points deducted
+                    } else {
+                        // If dart didn't count, still add it to history with a special mark
+                        // This is handled in the final history push, using original dartsForThisTurn
+                    }
+
+                    // Check for win/bust after each dart (if it counted)
+                    if (dartCounts) { // Only check if the dart actually counted towards the score
+                        if (currentScoreDuringTurn < 0 || currentScoreDuringTurn === 1) {
+                            bustOccurred = true;
+                            turnMessage = `${currentPlayer} a fait un "bust" ! Son score reste à ${scoreBeforeTurn}.`;
+                            playerScores[currentPlayer] = scoreBeforeTurn; // Revert score to before this turn
+                            aiVoiceMessages.push(turnMessage);
+                            break; // Stop processing further darts
+                        } else if (currentScoreDuringTurn === 0) {
+                            if (doubleOutActive) {
+                                if (dart.multiplier === 2 && dart.value !== 0) {
+                                    winOccurred = true;
+                                    turnMessage = `${currentPlayer} a gagné avec un "Double Out" !`;
+                                    winner = currentPlayer;
+                                    gameStarted = false;
+                                    gameEnded = true;
+                                    playerScores[currentPlayer] = 0; // Final score is 0
+                                    aiVoiceMessages.push(`${currentPlayer} a gagné avec un Double Out ! Félicitations !`);
+                                    break; // Stop processing further darts
+                                } else {
+                                    bustOccurred = true;
+                                    turnMessage = `${currentPlayer} a fait un "bust" ! Doit terminer avec un "Double Out". Son score reste à ${scoreBeforeTurn}.`;
+                                    playerScores[currentPlayer] = scoreBeforeTurn; // Revert score
+                                    aiVoiceMessages.push(turnMessage);
+                                    break; // Stop processing further darts
+                                }
+                            } else { // Straight Out
+                                winOccurred = true;
+                                turnMessage = `${currentPlayer} a gagné avec un "Straight Out" !`;
+                                winner = currentPlayer;
+                                gameStarted = false;
+                                gameEnded = true;
+                                playerScores[currentPlayer] = 0; // Final score is 0
+                                aiVoiceMessages.push(`${currentPlayer} a gagné avec un Straight Out ! Bravo !`);
+                                break; // Stop processing further darts
+                            }
+                        }
+                    }
+                    // If no win/bust yet, update player's score for display during the turn
+                    // This update is only needed if the loop continues
+                    if (!gameEnded && !bustOccurred) {
+                        playerScores[currentPlayer] = currentScoreDuringTurn;
                     }
                 }
 
-                // Add turn summary and funny comment for 301/501
-                if (!gameEnded) {
+                // After the loop, if no win/bust, the score is already updated by the last dart
+                // If a win/bust occurred, playerScores was already set correctly inside the loop.
+
+                // Add turn summary and funny comment for 301/501 if game not ended by win/bust
+                if (!gameEnded && !bustOccurred) { // Only add if game is not finished by win/bust
                     let commentCategory;
-                    if (totalTurnScore <= 40) commentCategory = 'low';
-                    else if (totalTurnScore <= 80) commentCategory = 'medium';
-                    else if (totalTurnScore <= 120) commentCategory = 'good';
-                    else if (totalTurnScore <= 179) commentCategory = 'high';
-                    else if (totalTurnScore === 180) commentCategory = '180';
+                    if (pointsDeductedThisTurn <= 40) commentCategory = 'low';
+                    else if (pointsDeductedThisTurn <= 80) commentCategory = 'medium';
+                    else if (pointsDeductedThisTurn <= 120) commentCategory = 'good';
+                    else if (pointsDeductedThisTurn <= 179) commentCategory = 'high';
+                    else if (pointsDeductedThisTurn === 180) commentCategory = '180';
                     else commentCategory = 'low'; // Fallback
 
-                    if (newScore === currentTotalScore && totalTurnScore > 0) { // If it was a bust but they scored points
-                        commentCategory = 'bust';
+                    // If score was not reduced due to Double In, but darts were thrown
+                    if (pointsDeductedThisTurn === 0 && dartsForThisTurn.length > 0 && doubleInActive && !playerHasDoubledIn[currentPlayer]) {
+                        commentCategory = 'low'; // Treat as a very low score
                     }
 
-                    const turnSummary = `${currentPlayer} a fait ${totalTurnScore} points. ${getRandomComment(commentCategory)}`;
+                    const turnSummary = `${currentPlayer} a fait ${pointsDeductedThisTurn} points. ${getRandomComment(commentCategory)}`;
                     aiVoiceMessages.push(turnSummary);
                 }
-                playerScores[currentPlayer] = newScore; // Update global state
             }
 
 
@@ -1021,7 +1052,7 @@
             history[currentPlayer].push({
                 darts: dartsForThisTurn.map(d => d.display).join(', '),
                 scoreEntered: totalTurnScore, // This is total points for 301/501, or just total darts score for ATC
-                newTotal: newScore, // This is remaining score for 301/501, or new target for ATC
+                newTotal: playerScores[currentPlayer], // This is remaining score for 301/501, or new target for ATC
                 message: turnMessage // Main message for the turn (bust, double in, win, etc.)
             });
 
@@ -1081,6 +1112,13 @@
         }
 
         function handleNumberClick(num) {
+            // Check if game has already ended (e.g., player won on previous dart)
+            if (winner || !gameStarted) {
+                showMessage("Le jeu est terminé ou n'a pas commencé.");
+                updateUI();
+                return;
+            }
+
             if (currentDartsThrown.length >= 3) {
                 showMessage('Vous avez déjà lancé 3 fléchettes pour ce tour.'); // Use showMessage
                 updateUI();
@@ -1115,9 +1153,33 @@
             selectedMultiplier = 1; // Reset multiplier after dart added
             showMessage(''); // Clear message
 
-            // If 3 darts have been thrown, automatically submit the turn
-            if (currentDartsThrown.length === 3) {
-                submitTurn(currentDartsThrown);
+            // If 3 darts have been thrown, or if a win/bust condition is met in 301/501, submit the turn
+            // For 301/501, we need to check win/bust *after* each dart
+            if (currentDartsThrown.length === 3 || (gameMode === '301' || gameMode === '501')) {
+                // Temporarily check if this dart leads to a win/bust to decide if turn ends early
+                const tempPlayerScore = playerScores[players[currentPlayerIndex]];
+                const tempNewScore = tempPlayerScore - dartScore; // Simulate deduction
+
+                let shouldSubmitEarly = false;
+                if (!atcMode) { // Only for 301/501
+                    if (tempNewScore < 0 || tempNewScore === 1) { // Bust
+                        shouldSubmitEarly = true;
+                    } else if (tempNewScore === 0) { // Potential win
+                        if (doubleOutActive) {
+                            if (dart.multiplier === 2 && dart.value !== 0) { // Double out win
+                                shouldSubmitEarly = true;
+                            }
+                        } else { // Straight out win
+                            shouldSubmitEarly = true;
+                        }
+                    }
+                }
+
+                if (currentDartsThrown.length === 3 || shouldSubmitEarly) {
+                    submitTurn(currentDartsThrown);
+                } else {
+                    updateUI(); // Update UI immediately after adding dart if turn not finished
+                }
             } else {
                 updateUI(); // Update UI immediately after adding dart if turn not finished
             }
