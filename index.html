@@ -394,6 +394,7 @@
         let voices = [];
         let speakingQueue = []; // Queue for sequential speaking
         let isSpeaking = false; // Flag to indicate if speech is in progress
+        let areVoicesLoaded = false; // New flag to track if voices are loaded
 
         // Pre-defined AI comments/citations for general turn announcements (only used for game start)
         const aiComments = [
@@ -820,9 +821,10 @@
             return "";
         }
 
-        // Ensure voices are loaded
+        // Ensure voices are loaded and set the flag
         speechSynth.onvoiceschanged = () => {
             voices = speechSynth.getVoices();
+            areVoicesLoaded = true; // Set flag once voices are loaded
             // Prioritize a male French voice
             const maleFrenchVoice = voices.find(voice => voice.lang === 'fr-FR' && (voice.name.includes('male') || voice.name.includes('Male') || voice.name.includes('homme') || voice.name.includes('Homme')));
             const frenchVoice = voices.find(voice => voice.lang === 'fr-FR');
@@ -832,10 +834,9 @@
             } else if (frenchVoice) {
                 console.warn("Aucune voix masculine française trouvée, utilisation d'une voix française par défaut :", frenchVoice.name);
             } else {
-                // Fallback to any available voice if no French voice is found
-                selectedVoice = voices[0];
-                console.warn("Aucune voix française trouvée, utilisation de la première voix disponible :", selectedVoice.name);
+                console.warn("Aucune voix française trouvée, utilisation de la première voix disponible.");
             }
+            processSpeechQueue(); // Try to process any pending messages once voices are loaded
         };
 
         // DOM Elements
@@ -921,7 +922,9 @@
         function speakMessage(text) {
             if (isVoiceActive && speechSynth) {
                 speakingQueue.push(text);
-                if (!isSpeaking) {
+                // Only try to process immediately if voices are loaded to avoid issues.
+                // Otherwise, processSpeechQueue will be called by onvoiceschanged when ready.
+                if (areVoicesLoaded && !isSpeaking) {
                     processSpeechQueue();
                 }
             }
@@ -929,6 +932,12 @@
 
         function processSpeechQueue() {
             if (speakingQueue.length > 0 && !isSpeaking) {
+                if (!areVoicesLoaded) {
+                    // Voices not yet loaded, wait for onvoiceschanged to call this again
+                    console.log("Voices not yet loaded, deferring speech.");
+                    return;
+                }
+
                 isSpeaking = true;
                 const text = speakingQueue.shift(); // Always a string now
 
@@ -947,7 +956,7 @@
                     selectedVoice = voices[0];
                     console.warn("Aucune voix française trouvée, utilisation de la première voix disponible :", selectedVoice.name);
                 } else {
-                    console.warn("Aucune voix vocale disponible sur ce système.");
+                    console.warn("Aucune voix vocale disponible sur ce système après chargement.");
                     isSpeaking = false; // Ensure to reset flag if no voices are available
                     return; // Exit if no voices can be used
                 }
@@ -1255,10 +1264,10 @@
             updateUI();
             // Initial announcement for the first player
             let initialMessage = `Le jeu commence en mode ${gameMode}. C'est au tour de ${players[currentPlayerIndex]}.`;
-            if (!atcMode && playerScores[players[currentPlayerIndex]] <= 170 && playerScores[players[currentPlayer]] > 1) {
-                initialMessage += ` Il vous reste ${playerScores[players[currentPlayer]]} points.`;
+            if (!atcMode && playerScores[players[currentPlayerIndex]] <= 170 && playerScores[players[currentPlayerIndex]] > 1) {
+                initialMessage += ` Il vous reste ${playerScores[players[currentPlayerIndex]]} points.`;
             } else if (atcMode) {
-                initialMessage += ` Votre cible est le numéro ${playerScores[players[currentPlayer]] === 25 ? 'Bullseye' : playerScores[players[currentPlayer]]}.`;
+                initialMessage += ` Votre cible est le numéro ${playerScores[players[currentPlayerIndex]] === 25 ? 'Bullseye' : playerScores[players[currentPlayerIndex]]}.`;
             }
             // Keep the initial AI comment for the very start of the game
             initialMessage += ` ${aiComments[Math.floor(Math.random() * aiComments.length)]}`;
@@ -2000,6 +2009,12 @@
             renderNumberKeypad(); // Render number buttons once
             updateRuleOptionsVisibility(); // Call initially to set correct visibility
             updateUI(); // Initial UI update
+
+            // Explicitly call getVoices() once to potentially kickstart voice loading
+            // on some browsers, though onvoiceschanged should handle it.
+            if (speechSynth) {
+                speechSynth.getVoices();
+            }
         });
 
     </script>
