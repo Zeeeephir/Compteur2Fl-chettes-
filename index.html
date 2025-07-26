@@ -4,8 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Compteur de Fléchettes</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts - Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome CDN for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         body {
@@ -124,9 +127,11 @@
             🎯 Compteur de Fléchettes 🎯
         </h1>
 
+        <!-- Section de configuration du jeu -->
         <div id="config-section" class="mb-8 p-4 bg-gray-700 rounded-lg shadow-inner border border-gray-600">
             <h2 class="text-2xl font-bold mb-4 text-center text-blue-300">Configuration du Jeu</h2>
 
+            <!-- Ajouter des joueurs -->
             <div class="mb-4">
                 <label for="newPlayer" class="block text-lg font-medium mb-2 text-gray-200">
                     Ajouter un joueur:
@@ -149,12 +154,15 @@
                 </div>
             </div>
 
+            <!-- Liste des joueurs -->
             <div id="players-list-container" class="mb-4 hidden">
                 <h3 class="text-xl font-semibold mb-2 text-purple-300">Joueurs:</h3>
                 <ul id="players-list" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    </ul>
+                    <!-- Les joueurs seront ajoutés ici par JS -->
+                </ul>
             </div>
 
+            <!-- Choix du mode de jeu -->
             <div class="mb-6">
                 <label for="gameMode" class="block text-lg font-medium mb-2 text-gray-200">
                     Mode de jeu:
@@ -170,6 +178,7 @@
                 </select>
             </div>
 
+            <!-- Options de règles pour 301/501 -->
             <div id="x01-rules" class="mb-6">
                 <h3 class="text-xl font-semibold mb-2 text-green-300">Options de Règles (301/501):</h3>
                 <div class="flex items-center mb-2">
@@ -192,6 +201,7 @@
                 </div>
             </div>
 
+            <!-- Options de règles pour Around the Clock -->
             <div id="atc-rules" class="mb-6 hidden">
                 <h3 class="text-xl font-semibold mb-2 text-green-300">Types de coups valides (Around the Clock):</h3>
                 <div class="flex flex-col sm:flex-row gap-4">
@@ -225,6 +235,7 @@
                 </div>
             </div>
 
+            <!-- Option de voix de l'IA (toujours visible) -->
             <div class="flex items-center mt-4 mb-6">
                 <input
                     type="checkbox"
@@ -236,6 +247,7 @@
                 <label for="enableVoice" class="ml-2 text-lg text-gray-200">Activer la voix de l'IA</label>
             </div>
 
+            <!-- Bouton Démarrer le jeu -->
             <button
                 id="startGameBtn"
                 class="btn-gradient btn-success w-full text-white font-bold py-3 px-6 rounded-md flex items-center justify-center gap-2"
@@ -245,19 +257,24 @@
             </button>
         </div>
 
+        <!-- Section du jeu en cours -->
         <div id="game-section" class="mb-8 p-4 bg-gray-700 rounded-lg shadow-inner border border-gray-600 hidden">
             <h2 id="game-mode-display" class="text-2xl font-bold mb-4 text-center text-yellow-300">
                 Jeu en Cours: 501
             </h2>
 
+            <!-- Affichage des scores des joueurs -->
             <div id="player-scores-display" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-                </div>
+                <!-- Les scores des joueurs seront ajoutés ici par JS -->
+            </div>
 
+            <!-- Entrée du score par fléchette -->
             <div class="mb-4 text-center">
                 <p class="text-xl font-semibold mb-2 text-orange-300">
                     C'est au tour de: <span id="current-player-name" class="text-yellow-400 font-extrabold text-2xl"></span>
                 </p>
 
+                <!-- Affichage des fléchettes lancées au tour actuel -->
                 <div class="bg-gray-900 p-3 rounded-md mb-4 border border-gray-600 shadow-md">
                     <p class="text-lg font-medium text-gray-300">
                         Fléchettes du tour (<span id="darts-count" class="font-bold text-white">0</span>/3):
@@ -268,6 +285,7 @@
                     </p>
                 </div>
 
+                <!-- Boutons Multiplicateurs -->
                 <div class="flex justify-center gap-2 mb-4">
                     <button
                         id="multiplier-simple"
@@ -292,9 +310,12 @@
                     </button>
                 </div>
 
+                <!-- Clavier numérique -->
                 <div id="number-keypad" class="grid grid-cols-5 sm:grid-cols-7 gap-2 mb-4">
-                    </div>
+                    <!-- Les boutons numériques seront ajoutés ici par JS -->
+                </div>
 
+                <!-- Bouton Annuler la dernière fléchette -->
                 <div class="flex justify-center mt-4">
                     <button
                         id="undoLastDartBtn"
@@ -308,6 +329,7 @@
             </div>
         </div>
 
+        <!-- Affichage du gagnant -->
         <div id="winner-section" class="text-center p-6 bg-green-700 rounded-lg shadow-xl border border-green-500 hidden">
             <h2 class="text-3xl font-bold text-white mb-4">🎉 Félicitations 🎉</h2>
             <p id="winner-name" class="text-4xl font-extrabold text-yellow-300 mb-6"></p>
@@ -327,20 +349,25 @@
             </button>
         </div>
 
+        <!-- Messages d'erreur/information -->
         <div id="message-section" class="mt-6 p-4 bg-red-600 rounded-md text-white text-center font-medium shadow-md hidden" role="alert" aria-live="polite">
             <span id="message-text"></span>
         </div>
 
+        <!-- Historique des scores -->
         <div id="history-section" class="mt-8 p-4 bg-gray-700 rounded-lg shadow-inner border border-gray-600 hidden">
             <h2 class="text-2xl font-bold mb-4 text-center text-cyan-300">Historique des Scores</h2>
             <div id="history-content" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                </div>
+                <!-- L'historique sera ajouté ici par JS -->
+            </div>
         </div>
 
+        <!-- Section Statistiques -->
         <div id="stats-section" class="mb-8 p-4 bg-gray-700 rounded-lg shadow-inner border border-gray-600 hidden">
             <h2 class="text-3xl font-bold mb-6 text-center text-yellow-300">Statistiques de la Partie</h2>
             <div id="player-stats-summary" class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                </div>
+                <!-- Player stats will be rendered here -->
+            </div>
             <div class="flex justify-center">
                 <button
                     id="backToMainFromStatsBtn"
@@ -352,6 +379,7 @@
             </div>
         </div>
 
+        <!-- Bouton Réinitialiser le jeu (toujours visible après le début ou la fin du jeu) -->
         <div id="reset-game-btn-container" class="mt-6 text-center hidden">
             <button
                 id="resetGameBtn"
@@ -473,7 +501,7 @@
                 "Tu es la médiocrité incarnée, même tes scores sont des bâtards.",
                 "Ni bon, ni mauvais. C'est le score du mec qui pue de la gueule mais qui s'en rend pas compte.",
                 "C'est le niveau du gars qui est content quand il arrive à se torcher le cul tout seul.",
-                "Un score qui donne envie de te gifler, juste pour que tu te réveilles.",         
+                "Un score qui donne envie de te gifler, juste pour que tu te réveilles.",           
                 "Ton score, c'est comme ta vie sexuelle : tellement moyen que personne n'en parle et que tout le monde s'en fout.",
                 "T'as fait un score de chie-mou, ni bon, ni mauvais, juste pathétique.",
                 "C'est la performance d'une vieille pute fatiguée : ça fait le job, mais sans aucune dignité.",
@@ -602,6 +630,25 @@
                 "180 ! Ça mérite une gâterie, tu la veux comment ?"
             ],
             'bust': [
+                "T'es vraiment qu'une bite. Même la merde que je chie est de meilleure qualité.",
+                "T'es vraiment qu'un putain de boulet, même ma grand-mère bourrée ferait mieux.",
+                "On dirait que tes fléchettes sont guidées par ton QI : c'est-à-dire, pas très loin.",
+                "Tu lances comme une merde, c'est pas possible !",
+                "Ton score, c'est la preuve que t'as les mains pleines de doigts.",
+                "Franchement, t'es un incapable fini à ce jeu.",
+                "T'es tellement nul que même les mouches se foutent de ta gueule.",
+                "Ce que tu viens de faire, ça s'appelle chier dans la colle, pas jouer aux fléchettes.",
+                "T'es une vraie catastrophe ambulante, même au tir à la sarbacane tu serais une brêle.",
+                "Ton niveau est tellement bas que ça en est insultant pour le jeu.",
+                "Sors-moi cette merde de ma vue, ça me donne envie de gerber.",
+                "T'as vraiment un problème, même pour toucher une grange tu serais un échec.",
+                "C'est pas des fléchettes que tu lances, c'est des excuses bidon.",
+                "On dirait que t'as des mains de tafiole, c'est pas possible autrement.",
+                "Ce score, c'est la preuve que ton cerveau est en vacances.",
+                "T'es vraiment un déchet à ce jeu, c'est affligeant.",
+                "Sérieusement, tu as dû confondre la cible avec ta dignité, parce que les deux sont à terre.",
+                "Félicitations, tu viens de prouver que même sans talent, on peut participer.",
+                "On dirait que tes fléchettes ont peur de la cible, elles fuient à chaque lancer !"
                 "BUST ! Mais t'es vraiment le roi des cons, pas possible !",
                 "Félicitations, tu as réussi à te chier dessus jusqu'au bout ! BUST !",
                 "T'as la cervelle d'un moineau ou quoi ?! BUST, sérieusement ?",
@@ -698,35 +745,6 @@
             "Bien joué, t'as écrasé tout le monde ! J'espère que ça te monte pas à la tête de te prendre pour quelqu'un, t'es juste un gros naze qui a eu de la veine.",
             "T'es le roi des rois, cette fois-ci ! Mais n'oublie pas que les rois finissent souvent décapités, et toi, t'es juste un roi de la chance, pas du talent, pauvre type."
         ];
-
-        // New: 69 score phrases
-        const score69Phrases = [
-            "Oh là là, 69 ! On dirait que quelqu'un a le sens de l'humour... ou le sens de la position préférée !",
-            "69... Hmm, intéressant. On sait ce que tu as en tête, petit coquin !",
-            "Exactement 69 ! Ni plus, ni moins, c'est la perfection en chiffres, non ?",
-            "Tiens donc, un 69 ! J'espère que tu t'amuses autant que cette position le promet !",
-            "Et le score est de 69 ! Y'a des chiffres qui parlent, et celui-là... il parle fort !",
-            "69 ! Félicitations, tu as atteint le nirvana numérique... ou quelque chose comme ça.",
-            "Pas mal, 69 ! On sent la touche artistique, le souci du détail, la petite blague coquine.",
-            "Le 69 ! Un classique, indémodable. Ça te donne un petit air malicieux, je trouve.",
-            "Un 69 ! C'est ce qu'on appelle un score... emblématique. On applaudit des deux mains, n'est-ce pas ?",
-            "Attention, le chiffre 69 est apparu ! Coïncidence ? Je ne crois pas. C'est la destinée !"
-        ];
-
-        // New: Kevinade phrases
-        const kevinadePhrases = [
-            "Ah, une Kévinade ! Magnifique ! Tu as réussi à tout foirer, même avec un bon score. Classique Kévin.",
-            "Félicitations, Kévin ! Tu viens de faire une masterclass en Kévinade. Incroyable !",
-            "C'est la Kévinade de l'année ! Tu étais si près, et pourtant si loin. Le talent à l'envers.",
-            "Une vraie Kévinade ! On dirait que tu as confondu les fléchettes avec tes chaussettes sales. Le gâchis parfait.",
-            "Kévinade ! Tu as le don de te saborder au meilleur moment. Chapeau l'artiste de la défaite !",
-            "On dirait que Kévin est passé par là... C'est ce qu'on appelle une Kévinade monumentale.",
-            "Voilà ce qui arrive quand on pense être trop fort : une bonne vieille Kévinade des familles.",
-            "Ah, la douce saveur d'une Kévinade bien exécutée. Tu me régales, Kévin !",
-            "C'est pas un bust, c'est une Kévinade ! Tu as prouvé que même les bons scores peuvent mener à la catastrophe.",
-            "Une Kévinade de derrière les fagots ! Tu as le flair pour la bourde, Kévin, c'est un don."
-        ];
-
 
         function getRandomComment(category) {
             const comments = funnyComments[category];
@@ -1065,7 +1083,7 @@
             } else {
                 // For X01 modes, if history is empty, it's the initial game mode score (301/501).
                 // Otherwise, it's the last recorded score from history.
-                return history[player].length > 0 ? history[player[history[player].length - 1].newTotal : parseInt(gameMode, 10);
+                return history[player].length > 0 ? history[player][history[player].length - 1].newTotal : parseInt(gameMode, 10);
             }
         }
 
@@ -1107,7 +1125,7 @@
                     currentPlayerIndex = 0; // Reset to first player
                 }
             }
-            else { // No players left
+             else { // No players left
                 resetGame();
                 return;
             }
@@ -1195,9 +1213,7 @@
             currentDartsThrown = [];
             selectedMultiplier = 1;
             atcMode = null; // Reset ATC mode
-            atcAllowSimpleCheckbox.checked = false;
-            atcAllowDoubleCheckbox.checked = false;
-            atcAllowTripleCheckbox.checked = false; // Reset ATC allowed hits to all unchecked
+            atcAllowedHitTypes = { simple: false, double: false, triple: false }; // Reset ATC allowed hits to all unchecked
             gameEnded = false; // Reset global gameEnded state
 
             // Reset checkboxes and select
@@ -1223,7 +1239,7 @@
             const currentPlayer = players[currentPlayerIndex];
             // Get the score at the very beginning of the turn. This is crucial for bust logic.
             const scoreAtStartOfTurn = getScoreAtStartOfCurrentTurn(currentPlayer);
-            
+
             let finalScoreForPlayer = playerScores[currentPlayer]; // This is the score after live deductions from handleNumberClick.
             let pointsDeductedThisTurnForHistory = 0; // Actual points scored for history, considering rules.
 
@@ -1243,7 +1259,7 @@
                 for (const dart of dartsForThisTurn) {
                     console.log(`  Processing dart: Value=${dart.value}, Multiplier=${dart.multiplier}, Score=${dart.score}`);
                     let hitCurrentTarget = false;
-                    
+
                     if (dart.value === tempTargetForRulesCheck) {
                         if (atcAllowedHitTypes.simple && dart.multiplier === 1) {
                             hitCurrentTarget = true;
@@ -1330,12 +1346,7 @@
                         if (tempScoreForRulesCheck < 0 || tempScoreForRulesCheck === 1) {
                             bustOccurred = true;
                             turnMessage = `${currentPlayer} a fait un "bust" ! Son score reste à ${scoreAtStartOfTurn}.`;
-                            // New: Check for "kévinade"
-                            if (scoreAtStartOfTurn > 70) {
-                                aiVoiceMessages.push(kevinadePhrases[Math.floor(Math.random() * kevinadePhrases.length)]);
-                            } else {
-                                aiVoiceMessages.push(getRandomComment('bust')); // Use random bust phrase for voice
-                            }
+                            aiVoiceMessages.push(getRandomComment('bust')); // Use random bust phrase for voice
                             break; // Stop processing further darts
                         } else if (tempScoreForRulesCheck === 0) {
                             if (doubleOutActive) {
@@ -1351,12 +1362,7 @@
                                 } else { // Hit 0 but not with a double when Double Out is active
                                     bustOccurred = true;
                                     turnMessage = `${currentPlayer} a fait un "bust" ! Doit terminer avec un "Double Out". Son score reste à ${scoreAtStartOfTurn}.`;
-                                    // New: Check for "kévinade"
-                                    if (scoreAtStartOfTurn > 70) {
-                                        aiVoiceMessages.push(kevinadePhrases[Math.floor(Math.random() * kevinadePhrases.length)]);
-                                    } else {
-                                        aiVoiceMessages.push(getRandomComment('bust')); // Use random bust phrase for voice
-                                    }
+                                    aiVoiceMessages.push(getRandomComment('bust')); // Use random bust phrase for voice
                                     break;
                                 }
                             } else { // Straight Out (no double out rule)
@@ -1392,11 +1398,10 @@
                     else if (pointsDeductedThisTurnForHistory === 180) commentCategory = '180';
                     else commentCategory = 'low'; // Fallback
 
-                    // New: Check for score 69
-                    if (finalScoreForPlayer === 69 && (gameMode === '301' || gameMode === '501')) {
-                        aiVoiceMessages.push(score69Phrases[Math.floor(Math.random() * score69Phrases.length)]);
+                    if (pointsDeductedThisTurnForHistory === 0 && dartsForThisTurn.length > 0 && doubleInActive && !playerHasDoubledIn[currentPlayer]) {
+                        commentCategory = 'low'; // Treat as a very low score if no points due to Double In
                     }
-                    
+
                     const turnSummary = `${currentPlayer} a fait ${pointsDeductedThisTurnForHistory} points. ${getRandomComment(commentCategory)}`;
                     aiVoiceMessages.push(turnSummary);
                 }
@@ -1496,7 +1501,7 @@
 
             // Get the score at the very beginning of the current turn for accurate simulation
             const scoreAtStartOfTurn = getScoreAtStartOfCurrentTurn(currentPlayer);
-            
+
             // Simulate the score deduction for live display and early submission check
             let simulatedScoreForLiveDisplay = scoreAtStartOfTurn;
             let tempPlayerHasDoubledInForLiveCheck = playerHasDoubledIn[currentPlayer];
@@ -1568,18 +1573,14 @@
                     if (doubleOutActive) {
                         if (lastAddedDart.multiplier === 2 && lastAddedDart.value !== 0) { // Valid double out
                             shouldSubmitEarly = true;
-                        } else { 
+                        } else { // <--- DÉBUT DE LA CORRECTION DU BUG
                             // Hit 0 but not with a double when Double Out is active -> THIS IS THE BUST CONDITION
                             // We need to force a bust here and revert the score immediately for display
                             playerScores[currentPlayer] = scoreAtStartOfTurn; // Revert score for display
                             showMessage(`${currentPlayer} a fait un "bust" ! Doit terminer avec un "Double Out". Score rétabli à ${scoreAtStartOfTurn}.`);
-                            if (scoreAtStartOfTurn > 70) {
-                                speakMessage(kevinadePhrases[Math.floor(Math.random() * kevinadePhrases.length)]);
-                            } else {
-                                speakMessage(getRandomComment('bust'));
-                            }
+                            speakMessage(getRandomComment('bust'));
                             shouldSubmitEarly = true; // Submit turn immediately
-                        } 
+                        } // <--- FIN DE LA CORRECTION DU BUG
                     } else { // Straight out win (no double out rule)
                         shouldSubmitEarly = true;
                     }
@@ -1606,7 +1607,7 @@
 
                 // Recalculate the live score after undoing the dart
                 const scoreAtStartOfTurn = getScoreAtStartOfCurrentTurn(currentPlayer);
-                
+
                 let simulatedScoreAfterUndo = scoreAtStartOfTurn;
                 let tempPlayerHasDoubledInAfterUndo = playerHasDoubledIn[currentPlayer];
                 let simulatedNextTargetForATC = scoreAtStartOfTurn; // For ATC live update
@@ -1691,7 +1692,7 @@
                         }
                     });
                 }
-                
+
                 // Collect all darts for dartboard visualization
                 allDartsThrown[player].forEach(dart => {
                     totalDarts++;
