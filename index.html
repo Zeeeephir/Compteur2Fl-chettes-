@@ -236,6 +236,20 @@
                 <label for="enableVoice" class="ml-2 text-lg text-gray-200">Activer la voix de l'IA</label>
             </div>
 
+            <!-- New: Voice Selection Dropdown -->
+            <div class="mb-6">
+                <label for="voiceSelect" class="block text-lg font-medium mb-2 text-gray-200">
+                    Sélectionner la voix:
+                </label>
+                <select
+                    id="voiceSelect"
+                    class="w-full p-3 rounded-md bg-gray-900 border border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    aria-label="Sélectionner la voix de l'IA"
+                >
+                    <!-- Options will be populated by JavaScript -->
+                </select>
+            </div>
+
             <!-- New: Test Voice Button -->
             <button
                 id="testVoiceBtn"
@@ -405,6 +419,8 @@
         let isSpeaking = false; // Flag to indicate if speech is in progress
         let areVoicesLoaded = false; // New flag to track if voices are loaded
         let voiceLoadInterval = null; // Interval for polling voices
+        let userSelectedVoiceURI = null; // Stores the URI of the voice selected by the user
+
 
         // Pre-defined AI comments/citations for general turn announcements (only used for game start)
         const aiComments = [
@@ -841,6 +857,7 @@
                     voiceLoadInterval = null;
                 }
                 console.log("Voices loaded successfully.");
+                populateVoiceSelect(); // Populate the dropdown once voices are loaded
                 processSpeechQueue(); // Process any pending messages
             } else {
                 console.log("No voices available yet, trying again...");
@@ -876,6 +893,7 @@
         const atcAllowTripleCheckbox = document.getElementById('atcAllowTriple');
 
         const enableVoiceCheckbox = document.getElementById('enableVoice'); // New checkbox
+        const voiceSelect = document.getElementById('voiceSelect'); // New: Voice Select Dropdown
         const testVoiceBtn = document.getElementById('testVoiceBtn'); // New: Test Voice Button
         const startGameBtn = document.getElementById('startGameBtn');
         const resetGameBtn = document.getElementById('resetGameBtn');
@@ -957,37 +975,45 @@
 
                 const utterance = new SpeechSynthesisUtterance(text);
 
-                let selectedVoice = null;
-                // Prioritize a male French voice that doesn't sound too "duck-like"
-                // Look for voices with 'fr-FR' and common male descriptors, avoiding 'robot' or 'duck' if possible.
-                const preferredMaleFrenchVoices = voices.filter(voice =>
-                    voice.lang === 'fr-FR' &&
-                    (voice.name.includes('male') || voice.name.includes('Male') || voice.name.includes('homme') || voice.name.includes('Homme')) &&
-                    !(voice.name.includes('robot') || voice.name.includes('duck') || voice.name.includes('synth')) // Avoid robotic/unnatural names
-                );
+                let voiceToUse = null;
 
-                const generalFrenchVoices = voices.filter(voice => voice.lang === 'fr-FR');
-
-                if (preferredMaleFrenchVoices.length > 0) {
-                    selectedVoice = preferredMaleFrenchVoices[0];
-                    console.log("Selected preferred male French voice:", selectedVoice.name);
-                } else if (generalFrenchVoices.length > 0) {
-                    // Fallback to any French voice, prioritizing male if available
-                    selectedVoice = generalFrenchVoices.find(voice => (voice.name.includes('male') || voice.name.includes('Male') || voice.name.includes('homme') || voice.name.includes('Homme'))) || generalFrenchVoices[0];
-                    console.warn("No preferred male French voice found, using general French voice:", selectedVoice.name);
-                } else if (voices.length > 0) {
-                    // Fallback to any available voice if no French voice is found
-                    selectedVoice = voices[0];
-                    console.warn("No French voice found, using first available voice:", selectedVoice.name);
-                } else {
-                    console.warn("Aucune voix vocale disponible sur ce système après chargement.");
-                    isSpeaking = false;
-                    showMessage("Erreur: Aucune voix vocale disponible sur votre appareil."); // User feedback
-                    return;
+                // If user has selected a voice, use that
+                if (userSelectedVoiceURI) {
+                    voiceToUse = voices.find(voice => voice.voiceURI === userSelectedVoiceURI);
+                    if (!voiceToUse) {
+                        console.warn("User selected voice not found, falling back to default logic.");
+                    }
                 }
 
-                if (selectedVoice) {
-                    utterance.voice = selectedVoice;
+                // Fallback logic if no user-selected voice or if it's not found
+                if (!voiceToUse) {
+                    const preferredMaleFrenchVoices = voices.filter(voice =>
+                        voice.lang === 'fr-FR' &&
+                        (voice.name.includes('male') || voice.name.includes('Male') || voice.name.includes('homme') || voice.name.includes('Homme')) &&
+                        !(voice.name.includes('robot') || voice.name.includes('duck') || voice.name.includes('synth')) // Avoid robotic/unnatural names
+                    );
+
+                    const generalFrenchVoices = voices.filter(voice => voice.lang === 'fr-FR');
+
+                    if (preferredMaleFrenchVoices.length > 0) {
+                        voiceToUse = preferredMaleFrenchVoices[0];
+                        console.log("Selected preferred male French voice:", voiceToUse.name);
+                    } else if (generalFrenchVoices.length > 0) {
+                        voiceToUse = generalFrenchVoices.find(voice => (voice.name.includes('male') || voice.name.includes('Male') || voice.name.includes('homme') || voice.name.includes('Homme'))) || generalFrenchVoices[0];
+                        console.warn("No preferred male French voice found, using general French voice:", voiceToUse.name);
+                    } else if (voices.length > 0) {
+                        voiceToUse = voices[0];
+                        console.warn("No French voice found, using first available voice:", voiceToUse.name);
+                    } else {
+                        console.warn("Aucune voix vocale disponible sur ce système après chargement.");
+                        isSpeaking = false;
+                        showMessage("Erreur: Aucune voix vocale disponible sur votre appareil.");
+                        return;
+                    }
+                }
+
+                if (voiceToUse) {
+                    utterance.voice = voiceToUse;
                 }
                 utterance.lang = 'fr-FR'; // Ensure language is set even if voice is not French
                 utterance.pitch = 1;
@@ -1000,11 +1026,48 @@
                 utterance.onerror = (event) => {
                     console.error('SpeechSynthesisUtterance.onerror', event);
                     isSpeaking = false;
-                    showMessage(`Erreur vocale: ${event.error}.`); // More specific error feedback
+                    showMessage(`Erreur vocale: ${event.error}.`);
                     processSpeechQueue();
                 };
 
                 speechSynth.speak(utterance);
+            }
+        }
+
+        // Function to populate the voice selection dropdown
+        function populateVoiceSelect() {
+            voiceSelect.innerHTML = ''; // Clear existing options
+            let defaultVoiceFound = false;
+
+            // Add a default "Auto" option
+            const autoOption = document.createElement('option');
+            autoOption.value = '';
+            autoOption.textContent = 'Automatique (par défaut)';
+            voiceSelect.appendChild(autoOption);
+
+            voices.forEach(voice => {
+                const option = document.createElement('option');
+                option.value = voice.voiceURI;
+                option.textContent = `${voice.name} (${voice.lang})`;
+                // Select the default preferred voice if it matches
+                if (voice.lang === 'fr-FR' && (voice.name.includes('male') || voice.name.includes('Male') || voice.name.includes('homme') || voice.name.includes('Homme')) && !(voice.name.includes('robot') || voice.name.includes('duck') || voice.name.includes('synth'))) {
+                    if (!defaultVoiceFound) { // Only select the first preferred one
+                        option.selected = true;
+                        userSelectedVoiceURI = voice.voiceURI; // Set the initial user selected voice
+                        defaultVoiceFound = true;
+                    }
+                }
+                voiceSelect.appendChild(option);
+            });
+
+            // If no preferred voice was found, ensure the "Auto" option is selected initially
+            if (!defaultVoiceFound && !userSelectedVoiceURI) {
+                voiceSelect.value = '';
+            }
+
+            // If a voice was previously selected by the user, try to re-select it
+            if (userSelectedVoiceURI) {
+                voiceSelect.value = userSelectedVoiceURI;
             }
         }
 
@@ -2034,6 +2097,17 @@
             createRipple(event); // Add ripple effect
             testVoice();
         });
+
+        // Event listener for voice selection change
+        voiceSelect.addEventListener('change', (event) => {
+            userSelectedVoiceURI = event.target.value;
+            console.log("User selected voice:", userSelectedVoiceURI);
+            // Optionally, play a test message with the newly selected voice immediately
+            if (isVoiceActive && areVoicesLoaded) {
+                speakMessage("Voix sélectionnée.");
+            }
+        });
+
 
         // Initial render on page load
         document.addEventListener('DOMContentLoaded', () => {
