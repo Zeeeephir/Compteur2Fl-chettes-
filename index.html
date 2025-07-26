@@ -594,16 +594,16 @@
 
         // New: Victory phrases
         const victoryPhrases = [
-            "Bravo, t'as gagné, mais t'as eu de la chatte, sale chien !",
-            "Félicitations, t'as eu une chance de cocu, connard !",
-            "Bien joué, mais c'est pas ton talent qui t'a fait gagner, c'est ta bonne étoile de merde !",
-            "Ouais, t'as gagné. Mais avoue, t'as pissé sur un trèfle à quatre feuilles avant de jouer, espèce de veinard !",
-            "Tu as gagné, mais tu sais très bien que le cul t'a sauvé, sale bâtard !",
-            "C'est une victoire par pure chance, t'as rien à foutre là !",
-            "Bravo champion... de la chance ! Parce que niveau talent, on repassera !",
-            "T'as gagné juste parce que les astres étaient alignés pour toi, tu peux pas me mentir !",
-            "La chance des débutants, ou la chance des cons... choisis ton camp, mais t'as eu de la chatte !",
-            "Tu as eu un coup de bol monstrueux, et c'est la seule raison pour laquelle t'as gagné, enfoiré !"
+            "Félicitations, champion ! Tu as écrasé la concurrence !",
+            "Incroyable ! Une victoire éclatante ! Tu es le maître des fléchettes !",
+            "Quelle performance ! La victoire est tienne, bien joué !",
+            "Le public est en délire ! Tu as gagné la partie avec brio !",
+            "Un coup de maître ! La victoire te revient de droit !",
+            "Tu as dominé ce jeu ! Bravo pour cette victoire méritée !",
+            "Le trône des fléchettes est à toi ! Quelle victoire !",
+            "C'est une victoire historique ! Ton nom restera gravé dans les annales !",
+            "Tu as prouvé ta supériorité ! La victoire est douce !",
+            "Mission accomplie ! Tu es le grand vainqueur de cette partie !"
         ];
 
         function getRandomComment(category) {
@@ -625,8 +625,12 @@
                 console.log("Voix masculine française trouvée :", maleFrenchVoice.name);
             } else if (frenchVoice) {
                 console.warn("Aucune voix masculine française trouvée, utilisation d'une voix française par défaut :", frenchVoice.name);
+            } else if (voices.length > 0) {
+                // Fallback to any available voice if no French voice is found
+                selectedVoice = voices[0];
+                console.warn("Aucune voix française trouvée, utilisation de la première voix disponible :", selectedVoice.name);
             } else {
-                console.warn("Aucune voix française trouvée, utilisation de la voix par default du système.");
+                console.warn("Aucune voix vocale disponible sur ce système.");
             }
         };
 
@@ -658,6 +662,7 @@
         const enableVoiceCheckbox = document.getElementById('enableVoice'); // New checkbox
         const startGameBtn = document.getElementById('startGameBtn');
         const resetGameBtn = document.getElementById('resetGameBtn');
+        // Corrected: Removed erroneous assignment to 'document'
         const newGameWinnerBtn = document.getElementById('newGameWinnerBtn');
         const showStatsBtn = document.getElementById('showStatsBtn'); // New stats button
         const backToMainFromStatsBtn = document.getElementById('backToMainFromStatsBtn'); // New back button
@@ -725,13 +730,26 @@
 
                 const utterance = new SpeechSynthesisUtterance(text);
 
+                let selectedVoice = null;
                 const maleFrenchVoice = voices.find(voice => voice.lang === 'fr-FR' && (voice.name.includes('male') || voice.name.includes('Male') || voice.name.includes('homme') || voice.name.includes('Homme')));
                 const frenchVoice = voices.find(voice => voice.lang === 'fr-FR');
 
                 if (maleFrenchVoice) {
-                    utterance.voice = maleFrenchVoice;
+                    selectedVoice = maleFrenchVoice;
                 } else if (frenchVoice) {
-                    utterance.voice = frenchVoice;
+                    selectedVoice = frenchVoice;
+                } else if (voices.length > 0) {
+                    // Fallback to any available voice if no French voice is found
+                    selectedVoice = voices[0];
+                    console.warn("Aucune voix française trouvée, utilisation de la première voix disponible :", selectedVoice.name);
+                } else {
+                    console.warn("Aucune voix vocale disponible sur ce système.");
+                    isSpeaking = false; // Ensure to reset flag if no voices are available
+                    return; // Exit if no voices can be used
+                }
+
+                if (selectedVoice) {
+                    utterance.voice = selectedVoice;
                 }
                 utterance.lang = 'fr-FR'; // Ensure language is set
                 utterance.pitch = 1; // Default pitch
@@ -916,6 +934,19 @@
             });
         }
 
+        // Helper to get the actual score at the start of the current turn
+        function getScoreAtStartOfCurrentTurn(player) {
+            if (atcMode) {
+                // For ATC, if history is empty, the starting target is 1.
+                // Otherwise, it's the last recorded target from history.
+                return history[player].length > 0 ? history[player][history[player].length - 1].newTotal : 1;
+            } else {
+                // For X01 modes, if history is empty, it's the initial game mode score (301/501).
+                // Otherwise, it's the last recorded score from history.
+                return history[player].length > 0 ? history[player][history[player].length - 1].newTotal : parseInt(gameMode, 10);
+            }
+        }
+
         // Game Logic Functions
         function addPlayer() {
             console.log("Add Player button clicked!"); // Debug log to confirm click
@@ -980,18 +1011,17 @@
             // Determine ATC mode and allowed hit types based on config
             if (String(gameMode).startsWith('atc')) {
                 atcMode = 'atc'; // Generic 'atc' mode
+                // Read allowed hit types directly from checkboxes
                 atcAllowedHitTypes = {
                     simple: atcAllowSimpleCheckbox.checked,
                     double: atcAllowDoubleCheckbox.checked,
                     triple: atcAllowTripleCheckbox.checked
                 };
-                // Ensure at least one hit type is selected for ATC modes
+                // If no hit type is selected, default to all true for ATC (as per previous request)
                 if (!atcAllowedHitTypes.simple && !atcAllowedHitTypes.double && !atcAllowedHitTypes.triple) {
-                    showMessage('Pour le mode Around the Clock, veuillez sélectionner au moins un type de coup valide (Simple, Double ou Triple).');
-                    gameStarted = false; // Prevent game from starting
-                    updateUI();
-                    return;
+                    atcAllowedHitTypes = { simple: true, double: true, triple: true };
                 }
+
             } else {
                 atcMode = null;
                 atcAllowedHitTypes = { simple: true, double: false, triple: false }; // Reset for X01 modes
@@ -1068,9 +1098,7 @@
         function submitTurn(dartsForThisTurn) {
             const currentPlayer = players[currentPlayerIndex];
             // Get the score at the very beginning of the turn. This is crucial for bust logic.
-            // If it's the first turn, use the initial game mode score. Otherwise, use the last recorded score.
-            const scoreAtStartOfTurn = history[currentPlayer].length > 0 ?
-                                       history[currentPlayer][history[currentPlayer].length - 1].newTotal : parseInt(gameMode, 10);
+            const scoreAtStartOfTurn = getScoreAtStartOfCurrentTurn(currentPlayer);
             
             let finalScoreForPlayer = playerScores[currentPlayer]; // This is the score after live deductions from handleNumberClick.
             let pointsDeductedThisTurnForHistory = 0; // Actual points scored for history, considering rules.
@@ -1084,36 +1112,49 @@
             allDartsThrown[currentPlayer] = allDartsThrown[currentPlayer].concat(dartsForThisTurn);
 
             if (atcMode) {
+                console.log(`ATC Turn for ${currentPlayer}. Initial target: ${scoreAtStartOfTurn}`);
                 let numbersAdvancedInTurn = 0;
-                let nextTargetToHit = scoreAtStartOfTurn; // Start from current target for ATC
+                let tempTargetForRulesCheck = scoreAtStartOfTurn; // Use a temporary variable for rule checking
 
                 for (const dart of dartsForThisTurn) {
+                    console.log(`  Processing dart: Value=${dart.value}, Multiplier=${dart.multiplier}, Score=${dart.score}`);
                     let hitCurrentTarget = false;
-                    // Check if dart hits the current target and is of an allowed type
-                    if (dart.value === nextTargetToHit) {
+                    
+                    if (dart.value === tempTargetForRulesCheck) {
                         if (atcAllowedHitTypes.simple && dart.multiplier === 1) {
                             hitCurrentTarget = true;
+                            console.log(`    Hit target ${tempTargetForRulesCheck} with Simple.`);
                         } else if (atcAllowedHitTypes.double && dart.multiplier === 2) {
                             hitCurrentTarget = true;
+                            console.log(`    Hit target ${tempTargetForRulesCheck} with Double.`);
                         } else if (atcAllowedHitTypes.triple && dart.multiplier === 3) {
                             hitCurrentTarget = true;
+                            console.log(`    Hit target ${tempTargetForRulesCheck} with Triple.`);
+                        } else {
+                            console.log(`    Hit target ${tempTargetForRulesCheck} but with disallowed multiplier ${dart.multiplier}.`);
                         }
+                    } else {
+                        console.log(`    Missed target ${tempTargetForRulesCheck}. Hit ${dart.value} instead.`);
                     }
 
                     if (hitCurrentTarget) {
                         numbersAdvancedInTurn++;
-                        nextTargetToHit++;
-                        if (nextTargetToHit > 20 && nextTargetToHit < 25) { // After 20, next target is 25 (Bullseye)
-                            nextTargetToHit = 25;
-                        } else if (nextTargetToHit > 25) { // After hitting 25, game ends
+                        tempTargetForRulesCheck++;
+                        if (tempTargetForRulesCheck > 20 && tempTargetForRulesCheck < 25) { // After 20, next target is 25 (Bullseye)
+                            tempTargetForRulesCheck = 25;
+                            console.log(`    Next target is Bullseye (25).`);
+                        } else if (tempTargetForRulesCheck > 25) { // After hitting 25, game ends
                             gameEnded = true; // Update global gameEnded
+                            console.log(`    Game ended: Bullseye hit and passed.`);
                             break; // Stop processing darts if game ends
                         }
                     }
                 }
 
-                finalScoreForPlayer = nextTargetToHit; // Final update for ATC
+                finalScoreForPlayer = tempTargetForRulesCheck; // Final update for ATC
                 pointsDeductedThisTurnForHistory = numbersAdvancedInTurn; // For ATC, this is the number of targets advanced.
+                console.log(`  End of ATC turn. Numbers advanced: ${numbersAdvancedInTurn}. Final target for player: ${finalScoreForPlayer}`);
+
 
                 if (gameEnded) {
                     turnMessage = `${currentPlayer} a gagné le Around the Clock !`;
@@ -1245,6 +1286,7 @@
             showMessage(turnMessage); // Update visual message on screen
 
             // Speak all accumulated messages sequentially
+            console.log("AI Voice Messages for this turn:", aiVoiceMessages); // Debug log
             aiVoiceMessages.forEach(msg => speakMessage(msg));
 
             // Move to next player if game is not ended
@@ -1318,32 +1360,57 @@
             };
 
             // Get the score at the very beginning of the current turn for accurate simulation
-            const scoreAtStartOfTurn = history[currentPlayer].length > 0 ?
-                                       history[currentPlayer][history[currentPlayer].length - 1].newTotal : parseInt(gameMode, 10);
+            const scoreAtStartOfTurn = getScoreAtStartOfCurrentTurn(currentPlayer);
             
             // Simulate the score deduction for live display and early submission check
             let simulatedScoreForLiveDisplay = scoreAtStartOfTurn;
             let tempPlayerHasDoubledInForLiveCheck = playerHasDoubledIn[currentPlayer];
+            let simulatedNextTargetForATC = scoreAtStartOfTurn; // For ATC live update
 
             let currentDartsPlusNew = [...currentDartsThrown, newDart]; // All darts for this turn including the new one
 
             for (const dart of currentDartsPlusNew) {
-                let scoreToDeductInSimulation = dart.score;
-                if (doubleInActive && !tempPlayerHasDoubledInForLiveCheck) {
-                    if (dart.multiplier === 2 && dart.value !== 0) {
-                        tempPlayerHasDoubledInForLiveCheck = true;
-                    } else {
-                        scoreToDeductInSimulation = 0;
+                if (atcMode) {
+                    // ATC live update logic: Check if this dart hits the current simulated target with allowed multiplier
+                    let hitCurrentTarget = false;
+                    if (dart.value === simulatedNextTargetForATC) {
+                        if (atcAllowedHitTypes.simple && dart.multiplier === 1) {
+                            hitCurrentTarget = true;
+                        } else if (atcAllowedHitTypes.double && dart.multiplier === 2) {
+                            hitCurrentTarget = true;
+                        } else if (atcAllowedHitTypes.triple && dart.multiplier === 3) {
+                            hitCurrentTarget = true;
+                        }
                     }
+                    if (hitCurrentTarget) {
+                        simulatedNextTargetForATC++;
+                        if (simulatedNextTargetForATC > 20 && simulatedNextTargetForATC < 25) {
+                            simulatedNextTargetForATC = 25;
+                        } else if (simulatedNextTargetForATC > 25) {
+                            // Game ends, but we are just simulating for live display, not ending game yet.
+                            // The actual game ending will be handled in submitTurn.
+                        }
+                    }
+                } else {
+                    // X01 live update logic
+                    let scoreToDeductInSimulation = dart.score;
+                    if (doubleInActive && !tempPlayerHasDoubledInForLiveCheck) {
+                        if (dart.multiplier === 2 && dart.value !== 0) {
+                            tempPlayerHasDoubledInForLiveCheck = true;
+                        } else {
+                            scoreToDeductInSimulation = 0;
+                        }
+                    }
+                    simulatedScoreForLiveDisplay -= scoreToDeductInSimulation;
                 }
-                simulatedScoreForLiveDisplay -= scoreToDeductInSimulation;
             }
 
-            // Update playerScores for live display only in X01 modes
-            if (!atcMode) {
+            // Update playerScores for live display
+            if (atcMode) {
+                playerScores[currentPlayer] = simulatedNextTargetForATC;
+            } else { // X01 modes
                 playerScores[currentPlayer] = simulatedScoreForLiveDisplay;
             }
-            // For ATC, playerScores is the target, not a running total, so no live deduction is needed here.
 
             // Add the dart to currentDartsThrown (this is the actual list of darts for the turn)
             currentDartsThrown.push(newDart);
@@ -1354,10 +1421,14 @@
 
             // Check for early submission if 3 darts are thrown or if a win/bust condition is met
             let shouldSubmitEarly = false;
-            if (!atcMode) { // Only for 301/501 modes
-                if (simulatedScoreForLiveDisplay < 0 || simulatedScoreForLiveDisplay === 1) { // Bust
+            if (atcMode) {
+                if (playerScores[currentPlayer] > 25) { // ATC game ends if target goes beyond 25
                     shouldSubmitEarly = true;
-                } else if (simulatedScoreForLiveDisplay === 0) { // Potential win
+                }
+            } else { // X01 modes
+                if (playerScores[currentPlayer] < 0 || playerScores[currentPlayer] === 1) { // Bust
+                    shouldSubmitEarly = true;
+                } else if (playerScores[currentPlayer] === 0) { // Potential win
                     const lastAddedDart = newDart; // The most recently added dart
                     if (doubleOutActive) {
                         if (lastAddedDart.multiplier === 2 && lastAddedDart.value !== 0) {
@@ -1372,7 +1443,7 @@
             if (shouldSubmitEarly || currentDartsThrown.length === 3) {
                 submitTurn(currentDartsThrown);
             } else {
-                updateUI(); // Update UI to show new dart and live score for X01
+                updateUI(); // Update UI to show new dart and live score
             }
         }
 
@@ -1388,35 +1459,59 @@
                 const currentPlayer = players[currentPlayerIndex];
 
                 // Recalculate the live score after undoing the dart
-                const scoreAtStartOfTurn = history[currentPlayer].length > 0 ?
-                                           history[currentPlayer][history[currentPlayer].length - 1].newTotal : parseInt(gameMode, 10);
+                const scoreAtStartOfTurn = getScoreAtStartOfCurrentTurn(currentPlayer);
                 
                 let simulatedScoreAfterUndo = scoreAtStartOfTurn;
                 let tempPlayerHasDoubledInAfterUndo = playerHasDoubledIn[currentPlayer];
+                let simulatedNextTargetForATC = scoreAtStartOfTurn; // For ATC live update
 
                 for (const dart of currentDartsThrown) { // Iterate through remaining darts
-                    let scoreToDeductInSimulation = dart.score;
-                    if (doubleInActive && !tempPlayerHasDoubledInAfterUndo) {
-                        if (dart.multiplier === 2 && dart.value !== 0) {
-                            tempPlayerHasDoubledInAfterUndo = true;
-                        } else {
-                            scoreToDeductInSimulation = 0;
+                    if (atcMode) {
+                        // ATC live update logic
+                        let hitCurrentTarget = false;
+                        if (dart.value === simulatedNextTargetForATC) {
+                            if (atcAllowedHitTypes.simple && dart.multiplier === 1) {
+                                hitCurrentTarget = true;
+                            } else if (atcAllowedHitTypes.double && dart.multiplier === 2) {
+                                hitCurrentTarget = true;
+                            } else if (atcAllowedHitTypes.triple && dart.multiplier === 3) {
+                                hitCurrentTarget = true;
+                            }
                         }
+                        if (hitCurrentTarget) {
+                            simulatedNextTargetForATC++;
+                            if (simulatedNextTargetForATC > 20 && simulatedNextTargetForATC < 25) {
+                                simulatedNextTargetForATC = 25;
+                            } else if (simulatedNextTargetForATC > 25) {
+                                // Game ends, but we are just simulating for live display.
+                            }
+                        }
+                    } else {
+                        // X01 live update logic
+                        let scoreToDeductInSimulation = dart.score;
+                        if (doubleInActive && !tempPlayerHasDoubledInAfterUndo) {
+                            if (dart.multiplier === 2 && dart.value !== 0) {
+                                tempPlayerHasDoubledInAfterUndo = true;
+                            } else {
+                                scoreToDeductInSimulation = 0;
+                            }
+                        }
+                        simulatedScoreAfterUndo -= scoreToDeductInSimulation;
                     }
-                    simulatedScoreAfterUndo -= scoreToDeductInSimulation;
                 }
 
-                // Update playerScores for live display in X01 modes
-                if (!atcMode) {
+                // Update playerScores for live display
+                if (atcMode) {
+                    playerScores[currentPlayer] = simulatedNextTargetForATC;
+                } else { // X01 modes
                     playerScores[currentPlayer] = simulatedScoreAfterUndo;
                 }
-                // For ATC mode, no score change happens per dart, so no reversion needed.
 
                 selectedMultiplier = 1;
                 showMessage('');
                 updateUI();
             } else {
-                showMessage('Aucune fléchette à annuler pour ce tour.');
+                showMessage('Aucune fléchette à annuler pour le tour.');
                 updateUI();
             }
         }
@@ -1591,10 +1686,10 @@
             if (selectedMode === 'atc') { // Check for the generic 'atc' mode
                 x01RulesDiv.classList.add('hidden');
                 atcRulesDiv.classList.remove('hidden');
-                // Set default checked state for ATC options to all unchecked
-                atcAllowSimpleCheckbox.checked = false;
-                atcAllowDoubleCheckbox.checked = false;
-                atcAllowTripleCheckbox.checked = false;
+                // Set default checked state for ATC options to all checked
+                atcAllowSimpleCheckbox.checked = true;
+                atcAllowDoubleCheckbox.checked = true;
+                atcAllowTripleCheckbox.checked = true;
             } else { // For 301/501 modes
                 x01RulesDiv.classList.remove('hidden');
                 atcRulesDiv.classList.add('hidden');
