@@ -236,9 +236,18 @@
                 <label for="enableVoice" class="ml-2 text-lg text-gray-200">Activer la voix de l'IA</label>
             </div>
 
+            <!-- New: Test Voice Button -->
+            <button
+                id="testVoiceBtn"
+                class="btn-gradient btn-info w-full text-white font-bold py-3 px-6 rounded-md flex items-center justify-center gap-2 mt-4"
+                aria-label="Tester la voix de l'IA"
+            >
+                <i class="fas fa-volume-up"></i> Tester la voix
+            </button>
+
             <button
                 id="startGameBtn"
-                class="btn-gradient btn-success w-full text-white font-bold py-3 px-6 rounded-md flex items-center justify-center gap-2"
+                class="btn-gradient btn-success w-full text-white font-bold py-3 px-6 rounded-md flex items-center justify-center gap-2 mt-4"
                 aria-label="Démarrer le jeu"
             >
                 <i class="fas fa-play-circle"></i> Démarrer le Jeu
@@ -565,7 +574,7 @@
                 "Enfin un tir de bonhomme, ça change !",
                 "Bravo, tu n'es plus une merde totale.",
                 "Bon score, t'as arrêté de trembler, lâche ?",
-                "Bien joué, pour une fois que tu vises bien.",
+                "Bien joué, pour une fois que you vises bien.",
                 "T'as mis un beau coup, sale petit veinard.",
                 "C'est propre, pour un boucher comme toi.",
                 "Un bon score, mais ne prends pas la grosse tête.",
@@ -865,6 +874,7 @@
         const atcAllowTripleCheckbox = document.getElementById('atcAllowTriple');
 
         const enableVoiceCheckbox = document.getElementById('enableVoice'); // New checkbox
+        const testVoiceBtn = document.getElementById('testVoiceBtn'); // New: Test Voice Button
         const startGameBtn = document.getElementById('startGameBtn');
         const resetGameBtn = document.getElementById('resetGameBtn');
         // Corrected: Removed erroneous assignment to 'document'
@@ -933,17 +943,20 @@
         function processSpeechQueue() {
             if (speakingQueue.length > 0 && !isSpeaking) {
                 if (!areVoicesLoaded) {
-                    // Voices not yet loaded, wait for onvoiceschanged to call this again
                     console.log("Voices not yet loaded, deferring speech.");
                     return;
                 }
 
                 isSpeaking = true;
-                const text = speakingQueue.shift(); // Always a string now
+                const text = speakingQueue.shift();
+
+                // Cancel any ongoing speech before starting a new one
+                speechSynth.cancel();
 
                 const utterance = new SpeechSynthesisUtterance(text);
 
                 let selectedVoice = null;
+                // Prioritize a male French voice
                 const maleFrenchVoice = voices.find(voice => voice.lang === 'fr-FR' && (voice.name.includes('male') || voice.name.includes('Male') || voice.name.includes('homme') || voice.name.includes('Homme')));
                 const frenchVoice = voices.find(voice => voice.lang === 'fr-FR');
 
@@ -952,30 +965,31 @@
                 } else if (frenchVoice) {
                     selectedVoice = frenchVoice;
                 } else if (voices.length > 0) {
-                    // Fallback to any available voice if no French voice is found
                     selectedVoice = voices[0];
                     console.warn("Aucune voix française trouvée, utilisation de la première voix disponible :", selectedVoice.name);
                 } else {
                     console.warn("Aucune voix vocale disponible sur ce système après chargement.");
-                    isSpeaking = false; // Ensure to reset flag if no voices are available
-                    return; // Exit if no voices can be used
+                    isSpeaking = false;
+                    showMessage("Erreur: Aucune voix vocale disponible sur votre appareil."); // User feedback
+                    return;
                 }
 
                 if (selectedVoice) {
                     utterance.voice = selectedVoice;
                 }
-                utterance.lang = 'fr-FR'; // Ensure language is set
-                utterance.pitch = 1; // Default pitch
-                utterance.rate = 1;  // Default rate
+                utterance.lang = 'fr-FR';
+                utterance.pitch = 1;
+                utterance.rate = 1;
 
                 utterance.onend = () => {
                     isSpeaking = false;
-                    processSpeechQueue(); // Process next message in queue
+                    processSpeechQueue();
                 };
                 utterance.onerror = (event) => {
                     console.error('SpeechSynthesisUtterance.onerror', event);
                     isSpeaking = false;
-                    processSpeechQueue(); // Try to process next message even on error
+                    showMessage(`Erreur vocale: ${event.error}.`); // More specific error feedback
+                    processSpeechQueue();
                 };
 
                 speechSynth.speak(utterance);
@@ -2003,6 +2017,12 @@
         // New event listener for game mode selection change
         gameModeSelect.addEventListener('change', updateRuleOptionsVisibility);
 
+        // New event listener for Test Voice button
+        testVoiceBtn.addEventListener('click', (event) => {
+            createRipple(event); // Add ripple effect
+            testVoice();
+        });
+
         // Initial render on page load
         document.addEventListener('DOMContentLoaded', () => {
             console.log("Script loaded and DOMContentLoaded."); // Debug log
@@ -2017,6 +2037,24 @@
             }
         });
 
+        // New function to test voice
+        function testVoice() {
+            if (!isVoiceActive) {
+                showMessage("La voix de l'IA est désactivée. Activez-la pour tester.");
+                return;
+            }
+            if (!areVoicesLoaded) {
+                showMessage("Les voix ne sont pas encore chargées. Veuillez patienter ou réessayer.");
+                console.warn("Attempted to test voice before voices were loaded.");
+                return;
+            }
+            if (speechSynth.speaking) {
+                showMessage("L'IA est déjà en train de parler. Veuillez attendre.");
+                return;
+            }
+            speakMessage("Bonjour, je suis votre assistant de fléchettes. Le test vocal est réussi !");
+            showMessage("Test vocal lancé. Vérifiez le son de votre appareil.");
+        }
     </script>
 </body>
 </html>
