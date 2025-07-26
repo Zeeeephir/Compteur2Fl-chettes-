@@ -805,7 +805,7 @@
                         ${playerHistoryEntries.map((entry, index) => `
                             <li class="mb-1 text-gray-300 text-left">
                                 <span class="font-bold text-white">Tour ${index + 1}:</span> Fléchettes: <span class="text-blue-300">${entry.darts}</span>, Score total: <span class="text-green-300">${entry.scoreEntered}</span>, Nouveau total: <span class="text-purple-300">${entry.newTotal}</span>
-                                ${entry.message && `<span class="text-sm text-red-400 italic"> (${entry.message})</span>`}
+                                ${entry.message ? `<span class="text-sm text-red-400 italic"> (${entry.message})</span>` : ''}
                             </li>
                         `).join('')}
                     </ul>
