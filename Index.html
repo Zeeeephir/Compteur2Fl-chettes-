@@ -11,6 +11,14 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
+            background-color: #1a202c; /* Dark base for gradient */
+            background-image: radial-gradient(at 50% 0%, #2d3748, #1a202c 70%); /* Subtle radial gradient from top */
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
         }
         .custom-scrollbar::-webkit-scrollbar {
             width: 8px;
@@ -26,22 +34,77 @@
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
             background: #555;
         }
+
+        /* Enhanced button styles with more pronounced effects */
+        .btn-gradient {
+            background-size: 200% auto;
+            color: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease-in-out;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-gradient:hover {
+            background-position: right center; /* Change the gradient position */
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+            transform: translateY(-3px);
+        }
+        .btn-gradient:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-primary { background-image: linear-gradient(to right, #6366f1 0%, #8b5cf6 50%, #6366f1 100%); }
+        .btn-success { background-image: linear-gradient(to right, #10b981 0%, #34d399 50%, #10b981 100%); }
+        .btn-danger { background-image: linear-gradient(to right, #ef4444 0%, #f87171 50%, #ef4444 100%); }
+        .btn-info { background-image: linear-gradient(to right, #0ea5e9 0%, #38bdf8 50%, #0ea5e9 100%); }
+        .btn-dark-gradient { background-image: linear-gradient(to right, #4b5563 0%, #6b7280 50%, #4b5563 100%); }
+
+        /* Specific styles for selected multiplier button */
+        .btn-multiplier-selected {
+            border: 3px solid #facc15; /* Yellow 400 */
+            box-shadow: 0 0 20px rgba(250, 204, 21, 0.8), inset 0 0 10px rgba(250, 204, 21, 0.5);
+            transform: scale(1.05);
+        }
+
+        /* Player card active state */
+        .player-card-active {
+            border: 3px solid #3b82f6; /* Blue 500 */
+            box-shadow: 0 0 30px rgba(59, 130, 246, 0.8), inset 0 0 15px rgba(59, 130, 246, 0.5);
+            transform: scale(1.03);
+        }
+
+        /* Main container shadow */
+        .main-container {
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), 0 0 0 5px rgba(255, 255, 255, 0.05) inset;
+            border-radius: 1rem;
+            background-color: #2d3748; /* Darker background for content */
+        }
+
+        /* Input field focus glow */
+        input:focus, select:focus {
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5); /* Blue 500 with transparency */
+            border-color: #3b82f6;
+        }
     </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-gray-900 to-gray-700 text-white p-4 sm:p-8 flex flex-col items-center justify-center">
 
-    <div class="bg-gray-800 p-6 sm:p-8 rounded-lg shadow-2xl w-full max-w-4xl border border-gray-700">
-        <h1 class="text-4xl font-extrabold text-center mb-6 text-yellow-400 drop-shadow-lg">
-            Compteur de Fléchettes
+    <div class="main-container p-6 sm:p-8 w-full max-w-4xl border border-gray-700">
+        <h1 class="text-5xl font-extrabold text-center mb-8 text-yellow-400 drop-shadow-lg tracking-wide">
+            🎯 Compteur de Fléchettes 🎯
         </h1>
 
         <!-- Section de configuration du jeu -->
-        <div id="config-section" class="mb-8 p-4 bg-gray-700 rounded-md border border-gray-600">
+        <div id="config-section" class="mb-8 p-4 bg-gray-700 rounded-lg shadow-inner border border-gray-600">
             <h2 class="text-2xl font-bold mb-4 text-center text-blue-300">Configuration du Jeu</h2>
 
             <!-- Ajouter des joueurs -->
             <div class="mb-4">
-                <label for="newPlayer" class="block text-lg font-medium mb-2">
+                <label for="newPlayer" class="block text-lg font-medium mb-2 text-gray-200">
                     Ajouter un joueur:
                 </label>
                 <div class="flex flex-col sm:flex-row gap-2">
@@ -53,7 +116,7 @@
                     />
                     <button
                         id="addPlayerBtn"
-                        class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-md shadow-lg transition duration-300 ease-in-out transform hover:scale-105"
+                        class="btn-gradient btn-primary text-white font-bold py-3 px-6 rounded-md"
                     >
                         Ajouter
                     </button>
@@ -70,7 +133,7 @@
 
             <!-- Choix du mode de jeu -->
             <div class="mb-6">
-                <label for="gameMode" class="block text-lg font-medium mb-2">
+                <label for="gameMode" class="block text-lg font-medium mb-2 text-gray-200">
                     Mode de jeu:
                 </label>
                 <select
@@ -91,7 +154,7 @@
                         id="doubleIn"
                         class="form-checkbox h-5 w-5 text-blue-600 rounded"
                     />
-                    <label for="doubleIn" class="ml-2 text-lg">Double In</label>
+                    <label for="doubleIn" class="ml-2 text-lg text-gray-200">Double In</label>
                 </div>
                 <div class="flex items-center">
                     <input
@@ -99,21 +162,30 @@
                         id="doubleOut"
                         class="form-checkbox h-5 w-5 text-blue-600 rounded"
                     />
-                    <label for="doubleOut" class="ml-2 text-lg">Double Out</label>
+                    <label for="doubleOut" class="ml-2 text-lg text-gray-200">Double Out</label>
+                </div>
+                <div class="flex items-center mt-4">
+                    <input
+                        type="checkbox"
+                        id="enableVoice"
+                        class="form-checkbox h-5 w-5 text-blue-600 rounded"
+                        checked
+                    />
+                    <label for="enableVoice" class="ml-2 text-lg text-gray-200">Activer la voix de l'IA</label>
                 </div>
             </div>
 
             <!-- Bouton Démarrer le jeu -->
             <button
                 id="startGameBtn"
-                class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-md shadow-lg transition duration-300 ease-in-out transform hover:scale-105"
+                class="btn-gradient btn-success w-full text-white font-bold py-3 px-6 rounded-md"
             >
                 Démarrer le Jeu
             </button>
         </div>
 
         <!-- Section du jeu en cours -->
-        <div id="game-section" class="mb-8 p-4 bg-gray-700 rounded-md border border-gray-600 hidden">
+        <div id="game-section" class="mb-8 p-4 bg-gray-700 rounded-lg shadow-inner border border-gray-600 hidden">
             <h2 id="game-mode-display" class="text-2xl font-bold mb-4 text-center text-yellow-300">
                 Jeu en Cours: 501
             </h2>
@@ -126,17 +198,17 @@
             <!-- Entrée du score par fléchette -->
             <div class="mb-4 text-center">
                 <p class="text-xl font-semibold mb-2 text-orange-300">
-                    C'est au tour de: <span id="current-player-name" class="text-yellow-400"></span>
+                    C'est au tour de: <span id="current-player-name" class="text-yellow-400 font-extrabold text-2xl"></span>
                 </p>
 
                 <!-- Affichage des fléchettes lancées au tour actuel -->
-                <div class="bg-gray-900 p-3 rounded-md mb-4 border border-gray-600">
+                <div class="bg-gray-900 p-3 rounded-md mb-4 border border-gray-600 shadow-md">
                     <p class="text-lg font-medium text-gray-300">
-                        Fléchettes du tour (<span id="darts-count">0</span>/3):
-                        <span id="current-darts-display" class="font-bold text-white">Aucune</span>
+                        Fléchettes du tour (<span id="darts-count" class="font-bold text-white">0</span>/3):
+                        <span id="current-darts-display" class="font-bold text-white ml-2">Aucune</span>
                     </p>
-                    <p class="text-lg font-medium text-gray-300">
-                        Multiplicateur sélectionné: <span id="selected-multiplier-display" class="font-bold text-white">Simple</span>
+                    <p class="text-lg font-medium text-gray-300 mt-1">
+                        Multiplicateur sélectionné: <span id="selected-multiplier-display" class="font-bold text-yellow-300">Simple</span>
                     </p>
                 </div>
 
@@ -144,19 +216,19 @@
                 <div class="flex justify-center gap-2 mb-4">
                     <button
                         id="multiplier-simple"
-                        class="p-3 rounded-md text-xl font-bold transition duration-200 ease-in-out w-24 bg-green-500 text-white"
+                        class="p-3 rounded-md text-xl font-bold w-24 btn-gradient btn-info"
                     >
                         Simple (S)
                     </button>
                     <button
                         id="multiplier-double"
-                        class="p-3 rounded-md text-xl font-bold transition duration-200 ease-in-out w-24 bg-gray-600 hover:bg-gray-500 text-white"
+                        class="p-3 rounded-md text-xl font-bold w-24 btn-gradient btn-dark-gradient"
                     >
                         Double (D)
                     </button>
                     <button
                         id="multiplier-triple"
-                        class="p-3 rounded-md text-xl font-bold transition duration-200 ease-in-out w-24 bg-gray-600 hover:bg-gray-500 text-white"
+                        class="p-3 rounded-md text-xl font-bold w-24 btn-gradient btn-dark-gradient"
                     >
                         Triple (T)
                     </button>
@@ -171,7 +243,7 @@
                 <div class="flex justify-center mt-4">
                     <button
                         id="undoLastDartBtn"
-                        class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-md shadow-lg transition duration-300 ease-in-out transform hover:scale-105 opacity-50 cursor-not-allowed"
+                        class="btn-gradient btn-danger font-bold py-3 px-8 rounded-md opacity-50 cursor-not-allowed"
                         disabled
                     >
                         Annuler la dernière fléchette
@@ -181,12 +253,12 @@
         </div>
 
         <!-- Affichage du gagnant -->
-        <div id="winner-section" class="text-center p-6 bg-green-700 rounded-md shadow-xl border border-green-500 hidden">
+        <div id="winner-section" class="text-center p-6 bg-green-700 rounded-lg shadow-xl border border-green-500 hidden">
             <h2 class="text-3xl font-bold text-white mb-4">🎉 Félicitations 🎉</h2>
             <p id="winner-name" class="text-4xl font-extrabold text-yellow-300 mb-6"></p>
             <button
                 id="newGameWinnerBtn"
-                class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-md shadow-lg transition duration-300 ease-in-out transform hover:scale-105"
+                class="btn-gradient btn-primary text-white font-bold py-3 px-8 rounded-md"
             >
                 Nouveau Jeu
             </button>
@@ -198,7 +270,7 @@
         </div>
 
         <!-- Historique des scores -->
-        <div id="history-section" class="mt-8 p-4 bg-gray-700 rounded-md border border-gray-600 hidden">
+        <div id="history-section" class="mt-8 p-4 bg-gray-700 rounded-lg shadow-inner border border-gray-600 hidden">
             <h2 class="text-2xl font-bold mb-4 text-center text-cyan-300">Historique des Scores</h2>
             <div id="history-content" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <!-- L'historique sera ajouté ici par JS -->
@@ -209,7 +281,7 @@
         <div id="reset-game-btn-container" class="mt-6 text-center hidden">
             <button
                 id="resetGameBtn"
-                class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-md shadow-lg transition duration-300 ease-in-out transform hover:scale-105"
+                class="btn-gradient btn-danger font-bold py-3 px-8 rounded-md"
             >
                 Réinitialiser le Jeu
             </button>
@@ -225,7 +297,7 @@
         let currentPlayerIndex = 0;
         let gameStarted = false;
         let winner = null;
-        let message = ''; // This will be updated by the new setMessage function
+        let message = '';
         let history = {};
 
         let doubleInActive = false;
@@ -234,6 +306,135 @@
 
         let currentDartsThrown = [];
         let selectedMultiplier = 1; // 1: Simple, 2: Double, 3: Triple
+
+        // AI Voice State
+        let isVoiceActive = true; // Default to active
+        let speechSynth = window.speechSynthesis;
+        let voices = [];
+
+        // Pre-defined AI comments/citations for general turn announcements
+        const aiComments = [
+            "Bonne chance pour ce tour !",
+            "Que les fléchettes soient avec vous.",
+            "Visez juste !",
+            "La précision est la clé.",
+            "Un bon lancer commence par une bonne intention.",
+            "Le tableau vous attend.",
+            "Concentration maximale !",
+            "Chaque point compte.",
+            "Le chemin vers la victoire est pavé de doubles.",
+            "Un triple, et c'est la gloire !",
+            "Attention au buste !",
+            "Le sang-froid est votre meilleur allié."
+        ];
+
+        // Funny comments based on turn score
+        const funnyComments = {
+            'very_low': [
+                "Oups, on dirait que la fléchette a pris un chemin inattendu. Peut-être qu'elle cherchait un café ?",
+                "Un score qui ferait pleurer une mouche. Courage, ça ne peut que s'améliorer !",
+                "Est-ce que c'était une fléchette ou un papillon qui volait ?",
+                "On a vu plus de points dans un fromage suisse. Réessayez !",
+                "Félicitations, vous avez évité le tableau avec brio. C'était l'objectif, non ?",
+                "Votre fléchette a décidé de prendre des vacances. Elle reviendra, peut-être avec plus de points.",
+                "C'est ce qu'on appelle un score... minimaliste. Très minimaliste.",
+                "On dirait que votre fléchette a peur du noir. Visez la lumière la prochaine fois !",
+                "Le score est si bas qu'il a froid. Donnez-lui une veste !",
+                "Je crois que votre fléchette a glissé sur une peau de banane. Ça arrive aux meilleurs... ou pas."
+            ],
+            'low': [
+                "Pas de quoi casser trois pattes à un canard, mais c'est un début !",
+                "On progresse, lentement mais sûrement... très sûrement.",
+                "C'est un score modeste, mais l'important c'est de participer, n'est-ce pas ?",
+                "Votre fléchette a atterri, c'est déjà ça ! Les points viendront plus tard.",
+                "Un petit pas pour l'homme, un petit score pour le joueur. La suite ?",
+                "On dirait que votre fléchette a fait une sieste en chemin. Réveillez-la !",
+                "C'est comme un régime : on commence doucement. Très doucement.",
+                "Votre score est comme un secret bien gardé : personne ne le verra venir.",
+                "La fléchette a touché le tableau. C'est un bon début pour un aveugle.",
+                "Vous avez trouvé le chemin... vers les petits chiffres. Bravo pour la cohérence !"
+            ],
+            'medium': [
+                "Un score respectable, on sent le potentiel !",
+                "Bien joué, ça commence à ressembler à des fléchettes !",
+                "Ni bon, ni mauvais. Juste... efficace. Continuez comme ça !",
+                "La moyenne, c'est bien. Mais le top, c'est mieux !",
+                "Vous êtes sur la bonne voie, continuez à viser le centre... ou pas.",
+                "Un score solide, comme un bon vieux chêne. Pas spectaculaire, mais fiable.",
+                "C'est un score qui dit : 'Je suis là, mais je ne veux pas faire de vagues.'",
+                "Votre fléchette a trouvé sa place. Elle n'est pas la star, mais elle est là.",
+                "Un score qui ne fera pas la une des journaux, mais qui fait le travail. Efficace !",
+                "Vous êtes le juste milieu. L'équilibre parfait entre le génie et le désastre."
+            ],
+            'good': [
+                "Impressionnant ! Le tableau tremble encore !",
+                "Très beau score, la fléchette a trouvé son chemin !",
+                "Vous chauffez, vous chauffez... Le 180 n'est pas loin !",
+                "Un score qui fait plaisir à voir. C'est ça, le talent !",
+                "La fléchette a dansé sur le tableau. Magnifique prestation !",
+                "Vous avez mis le paquet ! Ce score en dit long sur votre détermination.",
+                "Un score qui donne le sourire. Continuez à nous épater !",
+                "La fléchette a chanté en atterrissant. Une mélodie de points !",
+                "C'est un score qui mérite des applaudissements. Bravo l'artiste !",
+                "Vous avez transformé le tableau en chef-d'œuvre. Chaque fléchette est un coup de pinceau."
+            ],
+            'high': [
+                "Ouch ! Ça, c'est un coup de maître !",
+                "Presque un 180 ! La tension monte !",
+                "Le public est en délire ! Quel score !",
+                "Vous êtes un sniper des fléchettes ! Incroyable !",
+                "La fléchette a frôlé la perfection. Un exploit !",
+                "Ce score est une déclaration. Vous êtes là pour gagner !",
+                "Le tableau n'a pas vu ça depuis longtemps. Un coup de génie !",
+                "Vous avez mis le feu au tableau ! Les points pleuvent !",
+                "Un score qui restera dans les annales. Légendaire !",
+                "Vous avez fait trembler les fondations. Le tableau n'est plus le même !"
+            ],
+            '180': [
+                "180 ! Incroyable ! Un maximum absolu !",
+                "C'est un 180 ! Le public est en folie ! Quel joueur !",
+                "Trois triples 20 ! Le rêve de tout joueur de fléchettes !",
+                "Perfection ! Un 180 magistral !",
+                "Le Saint Graal des fléchettes ! Un 180 historique !",
+                "La fléchette a trouvé sa maison, trois fois de suite ! 180 !",
+                "C'est un chef-d'œuvre de précision ! 180 points !",
+                "Le tableau s'incline devant tant de talent ! 180 !",
+                "Vous avez écrit l'histoire avec ces trois fléchettes ! 180 !",
+                "Un moment de pure magie ! 180 points !"
+            ],
+            'bust': [
+                "Bust ! La pression était trop forte, n'est-ce pas ?",
+                "Oh non, un buste ! Le tableau vous a joué un tour !",
+                "Dommage, le buste est un piège redoutable. Mieux la prochaine fois !",
+                "La fléchette a décidé de faire une blague. C'était un buste !",
+                "Le buste, c'est comme un ami qui vous rappelle à l'ordre. Doucement, mais sûrement.",
+                "Vous avez tenté le coup, mais le buste a dit non. La prudence est de mise !",
+                "C'est un buste. Le tableau a gagné cette manche. Mais la guerre n'est pas finie !",
+                "La fléchette a fait un détour par la case 'défaite'. C'est un buste !",
+                "Le buste est une leçon. Apprenez-en et revenez plus fort !",
+                "On dirait que votre fléchette a eu le vertige. C'est un buste !"
+            ]
+        };
+
+        function getRandomComment(category) {
+            const comments = funnyComments[category];
+            if (comments && comments.length > 0) {
+                return comments[Math.floor(Math.random() * comments.length)];
+            }
+            return "";
+        }
+
+        // Ensure voices are loaded
+        speechSynth.onvoiceschanged = () => {
+            voices = speechSynth.getVoices();
+            // Try to find a French voice, fallback to any available
+            const frenchVoice = voices.find(voice => voice.lang === 'fr-FR');
+            if (frenchVoice) {
+                console.log("Voix française trouvée :", frenchVoice.name);
+            } else {
+                console.warn("Aucune voix française trouvée, utilisation de la voix par défaut.");
+            }
+        };
 
         // DOM Elements
         const configSection = document.getElementById('config-section');
@@ -251,6 +452,7 @@
         const gameModeSelect = document.getElementById('gameMode');
         const doubleInCheckbox = document.getElementById('doubleIn');
         const doubleOutCheckbox = document.getElementById('doubleOut');
+        const enableVoiceCheckbox = document.getElementById('enableVoice'); // New checkbox
         const startGameBtn = document.getElementById('startGameBtn');
         const resetGameBtn = document.getElementById('resetGameBtn');
         const newGameWinnerBtn = document.getElementById('newGameWinnerBtn');
@@ -279,6 +481,22 @@
         function showMessage(msg) {
             message = msg;
             updateUI();
+        }
+
+        // Function to make the AI speak
+        function speakMessage(text) {
+            if (isVoiceActive && speechSynth) {
+                speechSynth.cancel(); // Stop any current speech
+                const utterance = new SpeechSynthesisUtterance(text);
+                const frenchVoice = voices.find(voice => voice.lang === 'fr-FR');
+                if (frenchVoice) {
+                    utterance.voice = frenchVoice;
+                }
+                utterance.lang = 'fr-FR'; // Ensure language is set
+                utterance.pitch = 1; // Default pitch
+                utterance.rate = 1;  // Default rate
+                speechSynth.speak(utterance);
+            }
         }
 
         // Functions to update UI
@@ -312,12 +530,18 @@
                 selectedMultiplierDisplay.textContent = selectedMultiplier === 2 ? 'Double' : selectedMultiplier === 3 ? 'Triple' : 'Simple';
 
                 // Update multiplier button styles
-                multiplierSimpleBtn.classList.toggle('bg-green-500', selectedMultiplier === 1);
-                multiplierSimpleBtn.classList.toggle('bg-gray-600', selectedMultiplier !== 1);
-                multiplierDoubleBtn.classList.toggle('bg-green-500', selectedMultiplier === 2);
-                multiplierDoubleBtn.classList.toggle('bg-gray-600', selectedMultiplier !== 2);
-                multiplierTripleBtn.classList.toggle('bg-green-500', selectedMultiplier === 3);
-                multiplierTripleBtn.classList.toggle('bg-gray-600', selectedMultiplier !== 3);
+                multiplierSimpleBtn.classList.toggle('btn-info', selectedMultiplier === 1);
+                multiplierSimpleBtn.classList.toggle('btn-dark-gradient', selectedMultiplier !== 1);
+                multiplierSimpleBtn.classList.toggle('btn-multiplier-selected', selectedMultiplier === 1);
+
+                multiplierDoubleBtn.classList.toggle('btn-info', selectedMultiplier === 2);
+                multiplierDoubleBtn.classList.toggle('btn-dark-gradient', selectedMultiplier !== 2);
+                multiplierDoubleBtn.classList.toggle('btn-multiplier-selected', selectedMultiplier === 2);
+
+                multiplierTripleBtn.classList.toggle('btn-info', selectedMultiplier === 3);
+                multiplierTripleBtn.classList.toggle('btn-dark-gradient', selectedMultiplier !== 3);
+                multiplierTripleBtn.classList.toggle('btn-multiplier-selected', selectedMultiplier === 3);
+
 
                 // Disable multiplier buttons if 3 darts thrown
                 const disableMultiplierButtons = currentDartsThrown.length >= 3;
@@ -360,9 +584,9 @@
                 playersListContainer.classList.remove('hidden');
                 players.forEach((player, index) => {
                     const li = document.createElement('li');
-                    li.className = 'flex justify-between items-center bg-gray-900 p-3 rounded-md border border-gray-600';
+                    li.className = 'flex justify-between items-center bg-gray-900 p-3 rounded-lg border border-gray-600 shadow-md';
                     li.innerHTML = `
-                        <span class="text-lg">${player}</span>
+                        <span class="text-lg text-gray-100">${player}</span>
                         <button
                             data-player="${player}"
                             class="bg-red-600 hover:bg-red-700 text-white p-2 rounded-full text-sm transition duration-300 ease-in-out transform hover:scale-110"
@@ -384,12 +608,12 @@
             playerScoresDisplay.innerHTML = ''; // Clear existing scores
             players.forEach((player, index) => {
                 const div = document.createElement('div');
-                div.className = `p-4 rounded-md shadow-md text-center transition duration-300 ease-in-out ${
-                    index === currentPlayerIndex ? 'bg-blue-600 border-blue-400 scale-105' : 'bg-gray-900 border-gray-600'
+                div.className = `p-4 rounded-lg shadow-xl text-center transition duration-300 ease-in-out transform ${
+                    index === currentPlayerIndex ? 'bg-blue-600 border-blue-400 scale-105 player-card-active' : 'bg-gray-900 border-gray-600'
                 }`;
                 div.innerHTML = `
-                    <h3 class="text-xl font-semibold mb-2">${player}</h3>
-                    <p class="text-3xl font-extrabold text-green-400">${playerScores[player]}</p>
+                    <h3 class="text-xl font-semibold mb-2 text-white">${player}</h3>
+                    <p class="text-4xl font-extrabold text-green-400">${playerScores[player]}</p>
                     ${doubleInActive && !playerHasDoubledIn[player] ? '<p class="text-sm text-yellow-200 mt-1">Doit faire un Double In !</p>' : ''}
                 `;
                 playerScoresDisplay.appendChild(div);
@@ -401,7 +625,7 @@
             numberButtons.forEach(num => {
                 const button = document.createElement('button');
                 button.textContent = num;
-                button.className = `p-3 rounded-md text-xl font-bold transition duration-200 ease-in-out bg-gray-600 hover:bg-gray-500 text-white`;
+                button.className = `p-3 rounded-lg text-xl font-bold btn-gradient btn-dark-gradient`;
                 button.dataset.value = num; // Store the number value
                 numberKeypad.appendChild(button);
             });
@@ -411,13 +635,15 @@
             historyContent.innerHTML = ''; // Clear existing history
             players.forEach(player => {
                 const playerHistoryDiv = document.createElement('div');
-                playerHistoryDiv.className = 'bg-gray-900 p-4 rounded-md border border-gray-600';
+                playerHistoryDiv.className = 'bg-gray-900 p-4 rounded-lg border border-gray-600 shadow-md';
+                // Ensure history[player] is an array before calling .map()
+                const playerHistoryEntries = history[player] || []; // Provide an empty array if undefined
                 playerHistoryDiv.innerHTML = `
                     <h3 class="text-xl font-semibold mb-2 text-yellow-200">${player}</h3>
                     <ul class="max-h-48 overflow-y-auto custom-scrollbar">
-                        ${history[player].map((entry, index) => `
-                            <li class="mb-1 text-gray-300">
-                                <span class="font-bold text-white">Tour ${index + 1}:</span> Fléchettes: ${entry.darts}, Score total: ${entry.scoreEntered}, Nouveau total: ${entry.newTotal}
+                        ${playerHistoryEntries.map((entry, index) => `
+                            <li class="mb-1 text-gray-300 text-left">
+                                <span class="font-bold text-white">Tour ${index + 1}:</span> Fléchettes: <span class="text-blue-300">${entry.darts}</span>, Score total: <span class="text-green-300">${entry.scoreEntered}</span>, Nouveau total: <span class="text-purple-300">${entry.newTotal}</span>
                                 ${entry.message && `<span class="text-sm text-red-400 italic"> (${entry.message.replace(player + ' a fait un "bust" ! Son score reste à ' + playerScores[player] + '.', 'Bust!')})</span>`}
                             </li>
                         `).join('')}
@@ -432,6 +658,10 @@
             const name = newPlayerInput.value.trim();
             if (name !== '' && !players.includes(name)) {
                 players.push(name);
+                // Initialize score and history for the new player immediately
+                playerScores[name] = gameMode; // Initialize with default gameMode
+                history[name] = []; // Initialize with an empty array
+                playerHasDoubledIn[name] = false; // Initialize double-in status
                 newPlayerInput.value = '';
                 showMessage(''); // Use showMessage
                 updateUI();
@@ -471,6 +701,7 @@
             gameMode = parseInt(gameModeSelect.value, 10);
             doubleInActive = doubleInCheckbox.checked;
             doubleOutActive = doubleOutCheckbox.checked;
+            isVoiceActive = enableVoiceCheckbox.checked; // Get voice setting
 
             // Initialize scores and double-in status for new game
             playerScores = {};
@@ -486,6 +717,13 @@
             selectedMultiplier = 1;
 
             updateUI();
+            // Initial announcement for the first player
+            let initialMessage = `Le jeu commence en mode ${gameMode}. C'est au tour de ${players[currentPlayerIndex]}.`;
+            if (playerScores[players[currentPlayerIndex]] <= 170) {
+                initialMessage += ` Il vous reste ${playerScores[players[currentPlayerIndex]]} points.`;
+            }
+            initialMessage += ` ${aiComments[Math.floor(Math.random() * aiComments.length)]}`;
+            speakMessage(initialMessage);
         }
 
         function resetGame() {
@@ -503,14 +741,15 @@
             playerHasDoubledIn = {};
             currentDartsThrown = [];
             selectedMultiplier = 1;
-            // currentDartValue = null; // Ensure this is reset - this variable is not used to store selected value anymore
 
             // Reset checkboxes and select
             gameModeSelect.value = 501;
             doubleInCheckbox.checked = false;
             doubleOutCheckbox.checked = false;
+            enableVoiceCheckbox.checked = true; // Reset voice to active by default
 
             updateUI();
+            speakMessage("Jeu réinitialisé. Bienvenue aux fléchettes !");
         }
 
         function submitTurn(dartsForThisTurn) {
@@ -521,6 +760,7 @@
             let newScore = currentTotalScore - totalTurnScore;
             let turnMessage = '';
             let gameEnded = false;
+            let aiVoiceMessages = [];
 
             // Handle "Double In" rule
             if (doubleInActive && !playerHasDoubledIn[currentPlayer]) {
@@ -528,10 +768,12 @@
                 if (hasHitDouble) {
                     playerHasDoubledIn[currentPlayer] = true;
                     turnMessage = `${currentPlayer} a réussi son "Double In" !`;
+                    aiVoiceMessages.push(turnMessage);
                     // Points are counted normally
                 } else {
                     turnMessage = `${currentPlayer} n'a pas fait de "Double In". Le score de ${totalTurnScore} ne compte pas.`;
                     newScore = currentTotalScore; // Score does not change
+                    aiVoiceMessages.push(turnMessage);
                 }
             }
 
@@ -539,6 +781,7 @@
             if (newScore < 0 || newScore === 1) {
                 turnMessage = `${currentPlayer} a fait un "bust" ! Son score reste à ${currentTotalScore}.`;
                 newScore = currentTotalScore; // Score does not change on bust
+                aiVoiceMessages.push(turnMessage);
             } else if (newScore === 0) {
                 // Handle "Double Out" rule if active
                 if (doubleOutActive) {
@@ -548,17 +791,41 @@
                         winner = currentPlayer;
                         gameStarted = false;
                         gameEnded = true;
+                        aiVoiceMessages.push(`${currentPlayer} a gagné avec un Double Out ! Félicitations !`);
                     } else {
                         turnMessage = `${currentPlayer} a fait un "bust" ! Doit terminer avec un "Double Out". Son score reste à ${currentTotalScore}.`;
                         newScore = currentTotalScore; // Bust if no double out
+                        aiVoiceMessages.push(turnMessage);
                     }
                 } else {
                     turnMessage = `${currentPlayer} a gagné avec un "Straight Out" !`;
                     winner = currentPlayer;
                     gameStarted = false;
                     gameEnded = true;
+                    aiVoiceMessages.push(`${currentPlayer} a gagné avec un Straight Out ! Bravo !`);
                 }
             }
+
+            // Add turn summary and funny comment
+            if (!gameEnded) { // Only add if game is not finished by this turn
+                let commentCategory;
+                if (totalTurnScore === 0) commentCategory = 'very_low'; // For 0 points
+                else if (totalTurnScore <= 20) commentCategory = 'very_low';
+                else if (totalTurnScore <= 40) commentCategory = 'low';
+                else if (totalTurnScore <= 80) commentCategory = 'medium';
+                else if (totalTurnScore <= 120) commentCategory = 'good';
+                else if (totalTurnScore <= 179) commentCategory = 'high';
+                else if (totalTurnScore === 180) commentCategory = '180';
+                else commentCategory = 'medium'; // Fallback
+
+                if (newScore === currentTotalScore && totalTurnScore > 0) { // If it was a bust but they scored points
+                    commentCategory = 'bust';
+                }
+
+                const turnSummary = `${currentPlayer} a fait ${totalTurnScore} points. ${getRandomComment(commentCategory)}`;
+                aiVoiceMessages.push(turnSummary);
+            }
+
 
             // Update scores and history
             playerScores[currentPlayer] = newScore;
@@ -572,14 +839,36 @@
             // Reset states for the next turn
             currentDartsThrown = [];
             selectedMultiplier = 1;
-            // currentDartValue = null; // Not needed anymore
-            showMessage(turnMessage); // Use showMessage
+            showMessage(turnMessage); // Update visual message
+
+            // Speak all accumulated messages sequentially
+            let delay = 0;
+            aiVoiceMessages.forEach(msg => {
+                setTimeout(() => speakMessage(msg), delay);
+                delay += msg.length * 50; // Estimate time based on message length for sequential speaking
+            });
+
 
             // Move to next player if game is not ended
             if (!gameEnded) {
-                currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+                // Determine next player
+                const nextPlayerIndex = (currentPlayerIndex + 1) % players.length;
+                const nextPlayerName = players[nextPlayerIndex];
+                const nextPlayerScore = playerScores[nextPlayerName];
+
+                setTimeout(() => { // Delay for previous messages to finish
+                    currentPlayerIndex = nextPlayerIndex; // Update current player index
+                    let nextTurnAnnouncement = `C'est au tour de ${nextPlayerName}.`;
+                    if (nextPlayerScore <= 170 && nextPlayerScore > 1) { // Announce remaining score if <= 170 and not 0 or 1
+                        nextTurnAnnouncement += ` Il vous reste ${nextPlayerScore} points.`;
+                    }
+                    nextTurnAnnouncement += ` ${aiComments[Math.floor(Math.random() * aiComments.length)]}`;
+                    speakMessage(nextTurnAnnouncement);
+                    updateUI(); // Update UI after player change and message
+                }, delay + 500); // Add a small buffer after all messages
+            } else {
+                updateUI(); // Update UI immediately if game ended
             }
-            updateUI();
         }
 
         function handleMultiplierClick(multiplier) {
@@ -589,7 +878,6 @@
                 return;
             }
             selectedMultiplier = multiplier;
-            // currentDartValue = null; // Not needed anymore
             showMessage(''); // Clear previous messages
             updateUI();
         }
@@ -627,7 +915,6 @@
 
             // Reset for the next dart
             selectedMultiplier = 1; // Reset multiplier after dart added
-            // currentDartValue = null; // Not needed anymore
             showMessage(''); // Clear message
 
             // If 3 darts have been thrown, automatically submit the turn
@@ -642,7 +929,6 @@
             if (currentDartsThrown.length > 0) {
                 currentDartsThrown.pop(); // Remove last dart
                 selectedMultiplier = 1; // Reset multiplier
-                // currentDartValue = null; // Not needed anymore
                 showMessage(''); // Clear message
                 updateUI();
             } else {
@@ -669,6 +955,13 @@
         startGameBtn.addEventListener('click', startGame);
         resetGameBtn.addEventListener('click', resetGame);
         newGameWinnerBtn.addEventListener('click', resetGame);
+
+        enableVoiceCheckbox.addEventListener('change', (e) => {
+            isVoiceActive = e.target.checked;
+            if (!isVoiceActive) {
+                speechSynth.cancel(); // Stop speech if voice is disabled
+            }
+        });
 
         multiplierSimpleBtn.addEventListener('click', () => handleMultiplierClick(1));
         multiplierDoubleBtn.addEventListener('click', () => handleMultiplierClick(2));
