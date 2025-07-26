@@ -404,6 +404,7 @@
         let speakingQueue = []; // Queue for sequential speaking
         let isSpeaking = false; // Flag to indicate if speech is in progress
         let areVoicesLoaded = false; // New flag to track if voices are loaded
+        let voiceLoadInterval = null; // Interval for polling voices
 
         // Pre-defined AI comments/citations for general turn announcements (only used for game start)
         const aiComments = [
@@ -833,7 +834,14 @@
         // Ensure voices are loaded and set the flag
         speechSynth.onvoiceschanged = () => {
             voices = speechSynth.getVoices();
-            areVoicesLoaded = true; // Set flag once voices are loaded
+            if (voices.length > 0) {
+                areVoicesLoaded = true; // Set flag once voices are loaded
+                // Clear the interval once voices are loaded
+                if (voiceLoadInterval) {
+                    clearInterval(voiceLoadInterval);
+                    voiceLoadInterval = null;
+                }
+            }
             // Prioritize a male French voice
             const maleFrenchVoice = voices.find(voice => voice.lang === 'fr-FR' && (voice.name.includes('male') || voice.name.includes('Male') || voice.name.includes('homme') || voice.name.includes('Homme')));
             const frenchVoice = voices.find(voice => voice.lang === 'fr-FR');
@@ -2033,7 +2041,25 @@
             // Explicitly call getVoices() once to potentially kickstart voice loading
             // on some browsers, though onvoiceschanged should handle it.
             if (speechSynth) {
-                speechSynth.getVoices();
+                voices = speechSynth.getVoices(); // Try to get voices immediately
+                if (voices.length > 0) {
+                    areVoicesLoaded = true;
+                    console.log("Voices loaded on DOMContentLoaded.");
+                } else {
+                    // If no voices immediately, set up a polling interval
+                    voiceLoadInterval = setInterval(() => {
+                        voices = speechSynth.getVoices();
+                        if (voices.length > 0) {
+                            areVoicesLoaded = true;
+                            console.log("Voices loaded via polling.");
+                            clearInterval(voiceLoadInterval);
+                            voiceLoadInterval = null;
+                            processSpeechQueue(); // Process any pending messages
+                        } else {
+                            console.log("Polling for voices... still not loaded.");
+                        }
+                    }, 500); // Check every 500ms
+                }
             }
         });
 
