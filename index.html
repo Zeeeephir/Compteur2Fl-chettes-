@@ -332,6 +332,7 @@
         let message = '';
         let history = {}; // Stores { darts: [], scoreEntered, newTotal, message } for each turn
         let allDartsThrown = {}; // Stores ALL individual darts thrown by each player for stats
+        let gameEnded = false; // Global variable for game ended state
 
         let doubleInActive = false;
         let doubleOutActive = false;
@@ -438,7 +439,7 @@
                 "Le tableau n'a pas vu ça depuis longtemps. Il est en train de se demander s'il n'est pas cassé. Ou si vous n'êtes pas un robot.",
                 "Vous avez mis le feu au tableau ! Les pompiers sont en route pour éteindre les points. Et les espoirs de vos adversaires.",
                 "Un score qui restera dans les annales. Ou du moins, dans ma mémoire vive. Jusqu'à la prochaine partie.",
-                "Vous avez fait trembler les fondations. J'espère que l'immeuble est assuré. Et que vos adversaires ont des couches."
+                "Un moment de pure magie ! Je crois que je viens de voir un fantôme de la perfection. Et il m'a dit que vous êtes bon."
             ],
             '180': [
                 "180 ! Incroyable ! Le tableau vient de démissionner. Il ne supporte plus votre génie.",
@@ -735,6 +736,7 @@
 
         function renderPlayersList() {
             playersList.innerHTML = ''; // Clear existing list
+            console.log("Rendering players list. Players count:", players.length); // Debug log
             if (players.length > 0) {
                 playersListContainer.classList.remove('hidden');
                 players.forEach((player, index) => {
@@ -816,9 +818,9 @@
 
         // Game Logic Functions
         function addPlayer() {
+            console.log("Add Player button clicked!"); // Debug log to confirm click
             const name = newPlayerInput.value.trim();
-            console.log("Add Player button clicked. Name:", name); // Debug log
-            console.log("Current gameModeSelect.value:", gameModeSelect.value, "Type:", typeof gameModeSelect.value); // Debug log
+            console.log("Attempting to add player:", name); // Debug log
 
             if (name !== '' && !players.includes(name)) {
                 players.push(name);
@@ -830,6 +832,7 @@
                 playerHasDoubledIn[name] = false; // Initialize double-in status
                 newPlayerInput.value = '';
                 showMessage(''); // Use showMessage
+                console.log("Players array after adding:", players); // Debug log
                 updateUI();
             } else if (name === '') {
                 showMessage('Veuillez entrer un nom de joueur.'); // Use showMessage
@@ -867,6 +870,7 @@
             winner = null;
             message = ''; // Clear message
             gameMode = gameModeSelect.value; // Get string value for ATC modes
+            gameEnded = false; // Reset gameEnded for a new game
 
             doubleInActive = doubleInCheckbox.checked;
             doubleOutActive = doubleOutCheckbox.checked;
@@ -924,6 +928,7 @@
             currentDartsThrown = [];
             selectedMultiplier = 1;
             atcMode = null; // Reset ATC mode
+            gameEnded = false; // Reset global gameEnded state
 
             // Reset checkboxes and select
             gameModeSelect.value = 501;
@@ -954,7 +959,7 @@
 
             if (atcMode) {
                 let numbersAdvancedInTurn = 0;
-                let nextTargetToHit = currentTotalScore; // Start from current target
+                let nextTargetToHit = playerScores[currentPlayer]; // Start from current target for ATC
 
                 for (const dart of dartsForThisTurn) {
                     let hitCurrentTarget = false;
@@ -974,7 +979,7 @@
                         if (nextTargetToHit > 20 && nextTargetToHit < 25) { // After 20, next target is 25 (Bullseye)
                             nextTargetToHit = 25;
                         } else if (nextTargetToHit > 25) { // After hitting 25, game ends
-                            gameEnded = true;
+                            gameEnded = true; // Update global gameEnded
                             break; // Stop processing darts if game ends
                         }
                     }
@@ -1000,6 +1005,7 @@
                 }
 
             } else { // 301/501 game mode logic
+                let totalTurnScore = 0; // Keep track of the total score for this turn for history
                 for (let i = 0; i < dartsForThisTurn.length; i++) {
                     const dart = dartsForThisTurn[i];
                     let dartScoreToDeduct = 0;
@@ -1022,6 +1028,7 @@
                     if (dartCounts) {
                         currentScoreDuringTurn -= dartScoreToDeduct;
                         pointsDeductedThisTurn += dartScoreToDeduct;
+                        totalTurnScore += dartScoreToDeduct; // Accumulate total score for the turn
                     }
 
                     // Check for win/bust after each dart (if it counted)
@@ -1039,7 +1046,7 @@
                                     turnMessage = `${currentPlayer} a gagné avec un "Double Out" !`;
                                     winner = currentPlayer;
                                     gameStarted = false;
-                                    gameEnded = true;
+                                    gameEnded = true; // Update global gameEnded
                                     playerScores[currentPlayer] = 0; // Final score is 0
                                     aiVoiceMessages.push(`${currentPlayer} a gagné avec un Double Out ! Félicitations !`);
                                     break; // Stop processing further darts
@@ -1055,7 +1062,7 @@
                                 turnMessage = `${currentPlayer} a gagné avec un "Straight Out" !`;
                                 winner = currentPlayer;
                                 gameStarted = false;
-                                gameEnded = true;
+                                gameEnded = true; // Update global gameEnded
                                 playerScores[currentPlayer] = 0; // Final score is 0
                                 aiVoiceMessages.push(`${currentPlayer} a gagné avec un Straight Out ! Bravo !`);
                                 break; // Stop processing further darts
@@ -1096,7 +1103,7 @@
             // Update history
             history[currentPlayer].push({
                 darts: dartsForThisTurn.map(d => d.display).join(', '),
-                scoreEntered: totalTurnScore, // This is total points for 301/501, or just total darts score for ATC
+                scoreEntered: atcMode ? dartsForThisTurn.length : totalTurnScore, // For ATC, scoreEntered is number of darts thrown, for 301/501 it's total points
                 newTotal: playerScores[currentPlayer], // This is remaining score for 301/501, or new target for ATC
                 message: turnMessage // Main message for the turn (bust, double in, win, etc.)
             });
@@ -1156,7 +1163,9 @@
             updateUI();
         }
 
-        function handleNumberClick(num) {
+        function handleNumberClick(event) { // Changed to receive event
+            const num = parseInt(event.target.dataset.value, 10); // Get value from dataset
+
             // Check if game has already ended (e.g., player won on previous dart)
             if (winner || !gameStarted) {
                 showMessage("Le jeu est terminé ou n'a pas commencé.");
@@ -1165,9 +1174,6 @@
             }
 
             // For 301/501, if a win/bust occurred on a previous dart in this turn, stop
-            // This check needs to be based on the *current* state of the game after previously counted darts
-            // The logic for early exit is handled in submitTurn, so we only need to prevent adding more darts if the turn is effectively over.
-            // A simple check: if the last dart added resulted in a win/bust, then don't allow more darts.
             if (!atcMode && currentDartsThrown.length > 0) {
                 const lastDartSimulatedScore = playerScores[players[currentPlayerIndex]]; // This is the score *after* previous darts in this turn
                 if (lastDartSimulatedScore < 0 || lastDartSimulatedScore === 1 || lastDartSimulatedScore === 0) {
@@ -1279,6 +1285,7 @@
                     // This means the undo button should be disabled once submitTurn is called.
                     // The current logic submits turn immediately after 3 darts or early finish.
                     // So, the undo button will only be active *during* a player's turn before submission.
+                    playerScores[players[currentPlayerIndex]] += removedDart.score; // Revert score visually
                 }
 
                 selectedMultiplier = 1; // Reset multiplier
@@ -1458,6 +1465,31 @@
         showStatsBtn.addEventListener('click', showStatsPage);
         backToMainFromStatsBtn.addEventListener('click', hideStatsPage);
 
+        // Event Listeners for existing buttons
+        addPlayerBtn.addEventListener('click', addPlayer);
+        startGameBtn.addEventListener('click', startGame);
+        resetGameBtn.addEventListener('click', resetGame);
+        newGameWinnerBtn.addEventListener('click', resetGame);
+        undoLastDartBtn.addEventListener('click', undoLastDart);
+
+        multiplierSimpleBtn.addEventListener('click', () => handleMultiplierClick(1));
+        multiplierDoubleBtn.addEventListener('click', () => handleMultiplierClick(2));
+        multiplierTripleBtn.addEventListener('click', () => handleMultiplierClick(3));
+
+        // Event listener for number keypad buttons (delegation)
+        numberKeypad.addEventListener('click', (event) => {
+            if (event.target.tagName === 'BUTTON' && event.target.dataset.value !== undefined) {
+                handleNumberClick(event);
+            }
+        });
+
+        // Event listener for removing players from the list
+        playersList.addEventListener('click', (event) => {
+            if (event.target.closest('button') && event.target.closest('button').dataset.player) {
+                const playerToRemove = event.target.closest('button').dataset.player;
+                removePlayer(playerToRemove);
+            }
+        });
 
         // Initial render on page load
         document.addEventListener('DOMContentLoaded', () => {
