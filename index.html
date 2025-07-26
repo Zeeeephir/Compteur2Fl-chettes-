@@ -174,15 +174,13 @@
                 >
                     <option value="301">301</option>
                     <option value="501">501</option>
-                    <option value="atc_any">Around the Clock (Tout)</option>
-                    <option value="atc_doubles">Around the Clock (Doubles)</option>
-                    <option value="atc_triples">Around the Clock (Triples)</option>
+                    <option value="atc">Around the Clock</option>
                 </select>
             </div>
 
-            <!-- Options de règles -->
-            <div class="mb-6">
-                <h3 class="text-xl font-semibold mb-2 text-green-300">Options de Règles:</h3>
+            <!-- Options de règles pour 301/501 -->
+            <div id="x01-rules" class="mb-6">
+                <h3 class="text-xl font-semibold mb-2 text-green-300">Options de Règles (301/501):</h3>
                 <div class="flex items-center mb-2">
                     <input
                         type="checkbox"
@@ -201,16 +199,52 @@
                     />
                     <label for="doubleOut" class="ml-2 text-lg text-gray-200">Double Out</label>
                 </div>
-                <div class="flex items-center mt-4">
-                    <input
-                        type="checkbox"
-                        id="enableVoice"
-                        class="form-checkbox h-5 w-5 text-blue-600 rounded"
-                        checked
-                        aria-label="Activer la voix de l'IA"
-                    />
-                    <label for="enableVoice" class="ml-2 text-lg text-gray-200">Activer la voix de l'IA</label>
+            </div>
+
+            <!-- Options de règles pour Around the Clock -->
+            <div id="atc-rules" class="mb-6 hidden">
+                <h3 class="text-xl font-semibold mb-2 text-green-300">Types de coups valides (Around the Clock):</h3>
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <div class="flex items-center">
+                        <input
+                            type="checkbox"
+                            id="atcAllowSimple"
+                            class="form-checkbox h-5 w-5 text-blue-600 rounded"
+                            aria-label="Autoriser les coups simples pour Around the Clock"
+                        />
+                        <label for="atcAllowSimple" class="ml-2 text-lg text-gray-200">Simple</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input
+                            type="checkbox"
+                            id="atcAllowDouble"
+                            class="form-checkbox h-5 w-5 text-blue-600 rounded"
+                            aria-label="Autoriser les coups doubles pour Around the Clock"
+                        />
+                        <label for="atcAllowDouble" class="ml-2 text-lg text-gray-200">Double</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input
+                            type="checkbox"
+                            id="atcAllowTriple"
+                            class="form-checkbox h-5 w-5 text-blue-600 rounded"
+                            aria-label="Autoriser les coups triples pour Around the Clock"
+                        />
+                        <label for="atcAllowTriple" class="ml-2 text-lg text-gray-200">Triple</label>
+                    </div>
                 </div>
+            </div>
+
+            <!-- Option de voix de l'IA (toujours visible) -->
+            <div class="flex items-center mt-4 mb-6">
+                <input
+                    type="checkbox"
+                    id="enableVoice"
+                    class="form-checkbox h-5 w-5 text-blue-600 rounded"
+                    checked
+                    aria-label="Activer la voix de l'IA"
+                />
+                <label for="enableVoice" class="ml-2 text-lg text-gray-200">Activer la voix de l'IA</label>
             </div>
 
             <!-- Bouton Démarrer le jeu -->
@@ -361,7 +395,7 @@
         // Global State
         let players = [];
         let newPlayerName = '';
-        let gameMode = 501; // Can be 301, 501, atc_any, atc_doubles, atc_triples
+        let gameMode = 501; // Can be 301, 501, atc
         let playerScores = {}; // For 301/501, it's the remaining score. For ATC, it's the current target number.
         let currentPlayerIndex = 0;
         let gameStarted = false;
@@ -376,8 +410,8 @@
         let playerHasDoubledIn = {}; // Used only for 301/501 modes
 
         // ATC specific state
-        let atcMode = null; // 'any', 'doubles', 'triples'
-        // playerScores will store the ATC target for each player (1-20, 25)
+        let atcMode = null; // Will be 'atc' if Around the Clock is selected
+        let atcAllowedHitTypes = { simple: false, double: false, triple: false }; // New: for ATC rules, default all unchecked
 
         let currentDartsThrown = [];
         let selectedMultiplier = 1; // 1: Simple, 2: Double, 3: Triple
@@ -608,8 +642,16 @@
         const playersListContainer = document.getElementById('players-list-container');
         const playersList = document.getElementById('players-list');
         const gameModeSelect = document.getElementById('gameMode');
+
+        const x01RulesDiv = document.getElementById('x01-rules'); // New: 301/501 rules container
         const doubleInCheckbox = document.getElementById('doubleIn');
         const doubleOutCheckbox = document.getElementById('doubleOut');
+
+        const atcRulesDiv = document.getElementById('atc-rules'); // New: ATC rules container
+        const atcAllowSimpleCheckbox = document.getElementById('atcAllowSimple');
+        const atcAllowDoubleCheckbox = document.getElementById('atcAllowDouble');
+        const atcAllowTripleCheckbox = document.getElementById('atcAllowTriple');
+
         const enableVoiceCheckbox = document.getElementById('enableVoice'); // New checkbox
         const startGameBtn = document.getElementById('startGameBtn');
         const resetGameBtn = document.getElementById('resetGameBtn');
@@ -725,9 +767,7 @@
 
             // Update game mode display
             let displayMode = gameMode;
-            if (gameMode === 'atc_any') displayMode = 'Around the Clock (Tout)';
-            if (gameMode === 'atc_doubles') displayMode = 'Around the Clock (Doubles)';
-            if (gameMode === 'atc_triples') displayMode = 'Around the Clock (Triples)';
+            if (gameMode === 'atc') displayMode = 'Around the Clock';
             gameModeDisplay.textContent = `Jeu en Cours: ${displayMode}`;
 
             // Update player scores display
@@ -882,7 +922,7 @@
                 players.push(name);
                 // Initialize score and history for the new player immediately
                 // For ATC, initial score is 1 (first target)
-                playerScores[name] = (String(gameModeSelect.value).startsWith('atc_')) ? 1 : parseInt(gameModeSelect.value, 10);
+                playerScores[name] = (String(gameModeSelect.value).startsWith('atc')) ? 1 : parseInt(gameModeSelect.value, 10);
                 history[name] = []; // Initialize with an empty array
                 allDartsThrown[name] = []; // Initialize allDartsThrown for the player
                 playerHasDoubledIn[name] = false; // Initialize double-in status
@@ -933,11 +973,24 @@
             doubleOutActive = doubleOutCheckbox.checked;
             isVoiceActive = enableVoiceCheckbox.checked; // Get voice setting
 
-            // Determine ATC mode
-            if (String(gameMode).startsWith('atc_')) {
-                atcMode = gameMode.split('_')[1]; // 'any', 'doubles', 'triples'
+            // Determine ATC mode and allowed hit types based on config
+            if (String(gameMode).startsWith('atc')) {
+                atcMode = 'atc'; // Generic 'atc' mode
+                atcAllowedHitTypes = {
+                    simple: atcAllowSimpleCheckbox.checked,
+                    double: atcAllowDoubleCheckbox.checked,
+                    triple: atcAllowTripleCheckbox.checked
+                };
+                // Ensure at least one hit type is selected for ATC modes
+                if (!atcAllowedHitTypes.simple && !atcAllowedHitTypes.double && !atcAllowedHitTypes.triple) {
+                    showMessage('Pour le mode Around the Clock, veuillez sélectionner au moins un type de coup valide (Simple, Double ou Triple).');
+                    gameStarted = false; // Prevent game from starting
+                    updateUI();
+                    return;
+                }
             } else {
                 atcMode = null;
+                atcAllowedHitTypes = { simple: true, double: false, triple: false }; // Reset for X01 modes
             }
 
             // Initialize scores and double-in status for new game
@@ -985,6 +1038,7 @@
             currentDartsThrown = [];
             selectedMultiplier = 1;
             atcMode = null; // Reset ATC mode
+            atcAllowedHitTypes = { simple: false, double: false, triple: false }; // Reset ATC allowed hits to all unchecked
             gameEnded = false; // Reset global gameEnded state
 
             // Reset checkboxes and select
@@ -992,6 +1046,12 @@
             doubleInCheckbox.checked = false;
             doubleOutCheckbox.checked = false;
             enableVoiceCheckbox.checked = true; // Reset voice to active by default
+
+            // Reset ATC specific checkboxes to unchecked
+            atcAllowSimpleCheckbox.checked = false;
+            atcAllowDoubleCheckbox.checked = false;
+            atcAllowTripleCheckbox.checked = false;
+
 
             // Hide stats section if visible
             statsSection.classList.remove('active');
@@ -1020,12 +1080,13 @@
 
                 for (const dart of dartsForThisTurn) {
                     let hitCurrentTarget = false;
+                    // Check if dart hits the current target and is of an allowed type
                     if (dart.value === nextTargetToHit) {
-                        if (atcMode === 'any') {
+                        if (atcAllowedHitTypes.simple && dart.multiplier === 1) {
                             hitCurrentTarget = true;
-                        } else if (atcMode === 'doubles' && dart.multiplier === 2) {
+                        } else if (atcAllowedHitTypes.double && dart.multiplier === 2) {
                             hitCurrentTarget = true;
-                        } else if (atcMode === 'triples' && dart.multiplier === 3) {
+                        } else if (atcAllowedHitTypes.triple && dart.multiplier === 3) {
                             hitCurrentTarget = true;
                         }
                     }
@@ -1518,6 +1579,23 @@
             updateUI(); // Show appropriate sections
         }
 
+        // Function to update rule options visibility based on game mode
+        function updateRuleOptionsVisibility() {
+            const selectedMode = gameModeSelect.value;
+            if (selectedMode === 'atc') { // Check for the generic 'atc' mode
+                x01RulesDiv.classList.add('hidden');
+                atcRulesDiv.classList.remove('hidden');
+                // Set default checked state for ATC options to all unchecked
+                atcAllowSimpleCheckbox.checked = false;
+                atcAllowDoubleCheckbox.checked = false;
+                atcAllowTripleCheckbox.checked = false;
+            } else { // For 301/501 modes
+                x01RulesDiv.classList.remove('hidden');
+                atcRulesDiv.classList.add('hidden');
+            }
+        }
+
+
         // Event Listeners for new buttons
         showStatsBtn.addEventListener('click', showStatsPage);
         backToMainFromStatsBtn.addEventListener('click', hideStatsPage);
@@ -1574,10 +1652,14 @@
             }
         });
 
+        // New event listener for game mode selection change
+        gameModeSelect.addEventListener('change', updateRuleOptionsVisibility);
+
         // Initial render on page load
         document.addEventListener('DOMContentLoaded', () => {
             console.log("Script loaded and DOMContentLoaded."); // Debug log
             renderNumberKeypad(); // Render number buttons once
+            updateRuleOptionsVisibility(); // Call initially to set correct visibility
             updateUI(); // Initial UI update
         });
 
