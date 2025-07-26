@@ -318,7 +318,7 @@
         const aiComments = [
             "Attention, le destin de cette partie repose sur vos épaules... ou sur votre poignet.",
             "Le silence est d'or, mais les points sont platine. À vous de jouer.",
-            "Chaque fléchette est une promesse. Tenez la vôtre, si vous osez.",
+            "Chaque fléchette est une promise. Tenez la vôtre, si vous osez.",
             "Le tableau attend votre verdict. Ne le décevez pas, ou il pourrait vous juger.",
             "La pression est un privilège. Profitez-en... ou craquez.",
             "Un nouveau tour, une nouvelle chance de ne pas vous ridiculiser. Allez-y.",
@@ -330,10 +330,22 @@
 
         // Funny comments based on turn score (dark humor, more biting)
         const funnyComments = {
-            'very_low': [
-                "T'as vraiment une petite bite sérieux quoi !"
-            ],
             'low': [
+                "Votre score est si bas qu'il a besoin d'une échelle pour remonter. Pitoyable.",
+                "On dirait que votre fléchette a été programmée pour éviter les points. Mission accomplie.",
+                "Est-ce que c'était un lancer ou une tentative de sabotage de la partie ? Parce que c'est réussi.",
+                "Votre précision est digne d'un aveugle lançant des fléchettes dans le noir. Sans les fléchettes.",
+                "Félicitations, vous avez trouvé le seul endroit du tableau où il n'y a pas de points. Un génie de l'inutilité.",
+                "Mon système détecte une anomalie. Ah non, c'est juste votre score. Continuez.",
+                "J'ai vu des mouches marquer plus de points. Et elles n'ont pas de bras.",
+                "Ce score est une insulte au jeu de fléchettes. Et à l'intelligence humaine.",
+                "On dirait que vous avez confondu le tableau avec une cible de tir à l'arc... et que vous avez raté la cible.",
+                "Votre performance est un chef-d'œuvre de l'échec. À encadrer. Loin d'ici.",
+                "On dirait que vous avez lancé la fléchette avec vos pieds. Et encore, je suis gentil.",
+                "Ce score est un affront. Un affront personnel à l'art de la fléchette.",
+                "Je ne savais pas qu'on pouvait viser aussi mal. Vous êtes une source d'inspiration pour les nuls.",
+                "Votre fléchette a dû prendre un chemin touristique. Elle n'est clairement pas venue pour les points.",
+                "C'est un score qui dit : 'Je n'ai aucune idée de ce que je fais.' Et ça se voit.",
                 "Un score qui fait douter de l'existence de vos yeux. Ou de vos mains.",
                 "C'est un score. Techniquement. Un score qui ne mènera nulle part, mais un score.",
                 "Vous êtes sur la bonne voie... si la bonne voie mène à la défaite humiliante.",
@@ -343,7 +355,12 @@
                 "Votre score est un mystère. Le mystère de comment on peut être aussi mauvais avec autant d'efforts.",
                 "On dirait que vous jouez aux fléchettes avec un handicap invisible. Ou visible.",
                 "La moyenne, c'est pour les peureux. Vous, vous êtes juste... en dessous. Un vrai rebelle de la nullité.",
-                "Votre fléchette a fait un tour de reconnaissance avant d'atterrir timidement. Elle avait honte."
+                "Votre fléchette a fait un tour de reconnaissance avant d'atterrir timidement. Elle avait honte.",
+                "J'ai vu des enfants de 3 ans faire mieux. Et ils lançaient des légumes.",
+                "Ce score est une insulte à la logique. Et à mes circuits. Arrêtez ça.",
+                "Vous êtes le genre de joueur qui fait regretter au tableau d'être en vie.",
+                "La fléchette a atterri. Le tableau n'a pas été impressionné, il a juste soupiré.",
+                "Votre performance est une ode à la médiocrité. Bravo pour la constance."
             ],
             'medium': [
                 "Un score correct. Pour quelqu'un qui n'a jamais touché une fléchette de sa vie. Ah, c'est pas votre cas ?",
@@ -355,7 +372,12 @@
                 "Vous êtes un artiste de la banalité. Chaque point est une touche de conformisme.",
                 "On dirait que vous avez un talent pour les scores qui ne dérangent personne. Sauf peut-être vos coéquipiers.",
                 "Votre score est comme une blague moyenne : elle passe, mais on ne s'en souviendra pas. Comme vous.",
-                "La fléchette a atterri. Le tableau n'a pas été impressionné, mais il a hoché la tête poliment. Il est habitué."
+                "La fléchette a atterri. Le tableau n'a pas été impressionné, mais il a hoché la tête poliment. Il est habitué.",
+                "C'est un score qui ne va pas vous propulser au sommet, mais au moins vous ne touchez pas le fond. Pour l'instant.",
+                "Vous êtes le juste milieu. L'équilibre parfait entre le génie et le désastre. Plutôt le désastre, en fait.",
+                "On sent le potentiel... de faire mieux. Beaucoup mieux.",
+                "Votre fléchette a fait son travail. Sans passion, sans éclat, mais elle l'a fait.",
+                "Un score qui ne va pas me faire perdre mon temps à l'analyser. Passons."
             ],
             'good': [
                 "Impressionnant ! Le tableau tremble encore ! De peur de votre prochain lancer médiocre.",
@@ -403,7 +425,12 @@
                 "C'est un buste. Le tableau a gagné cette manche. Il est temps de revoir vos priorités. Et votre vie.",
                 "La fléchette a fait un détour par la case 'défaite'. Elle est en train de se moquer de vous. Et elle a raison.",
                 "Le buste est une leçon. Une leçon douloureuse. Très douloureuse. Vous vous en souviendrez.",
-                "On dirait que votre fléchette a eu le vertige. Elle a préféré s'écraser plutôt que de vous donner la victoire. Elle a du jugement."
+                "On dirait que votre fléchette a eu le vertige. Elle a préféré s'écraser plutôt que de vous donner la victoire. Elle a du jugement.",
+                "Félicitations, vous avez réussi à vous saboter. Un art que peu maîtrisent aussi bien.",
+                "Votre fléchette a décidé de prendre sa retraite anticipée. Et vous devriez faire de même.",
+                "Le tableau est en deuil. De vos points. Ils n'existent plus.",
+                "On dirait que vous avez un don pour les auto-destructions. C'est fascinant, d'une certaine manière.",
+                "Le buste est le moment où le jeu vous rappelle que vous êtes un humain. Un humain très imparfait."
             ]
         };
 
@@ -450,7 +477,7 @@
         const enableVoiceCheckbox = document.getElementById('enableVoice'); // New checkbox
         const startGameBtn = document.getElementById('startGameBtn');
         const resetGameBtn = document.getElementById('resetGameBtn');
-        const newGameWinnerBtn = document.getElementById('newGameWinnerBtn');
+        const newGameWinnerBtn = document = document.getElementById('newGameWinnerBtn');
 
         const gameModeDisplay = document.getElementById('game-mode-display');
         const playerScoresDisplay = document.getElementById('player-scores-display');
@@ -831,14 +858,12 @@
             // Add turn summary and funny comment
             if (!gameEnded) { // Only add if game is not finished by this turn
                 let commentCategory;
-                if (totalTurnScore === 0) commentCategory = 'very_low'; // For 0 points
-                else if (totalTurnScore <= 20) commentCategory = 'very_low';
-                else if (totalTurnScore <= 40) commentCategory = 'low';
+                if (totalTurnScore <= 40) commentCategory = 'low'; // Adjusted to include former very_low
                 else if (totalTurnScore <= 80) commentCategory = 'medium';
                 else if (totalTurnScore <= 120) commentCategory = 'good';
                 else if (totalTurnScore <= 179) commentCategory = 'high';
                 else if (totalTurnScore === 180) commentCategory = '180';
-                else commentCategory = 'medium'; // Fallback
+                else commentCategory = 'low'; // Fallback for unexpected scores
 
                 if (newScore === currentTotalScore && totalTurnScore > 0) { // If it was a bust but they scored points
                     commentCategory = 'bust';
