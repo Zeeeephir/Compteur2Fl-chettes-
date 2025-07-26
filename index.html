@@ -817,11 +817,13 @@
         // Game Logic Functions
         function addPlayer() {
             const name = newPlayerInput.value.trim();
+            console.log("Add Player button clicked. Name:", name); // Debug log
+            console.log("Current gameModeSelect.value:", gameModeSelect.value, "Type:", typeof gameModeSelect.value); // Debug log
+
             if (name !== '' && !players.includes(name)) {
                 players.push(name);
                 // Initialize score and history for the new player immediately
                 // For ATC, initial score is 1 (first target)
-                // Use gameModeSelect.value directly as it's always a string
                 playerScores[name] = (String(gameModeSelect.value).startsWith('atc_')) ? 1 : parseInt(gameModeSelect.value, 10);
                 history[name] = []; // Initialize with an empty array
                 allDartsThrown[name] = []; // Initialize allDartsThrown for the player
@@ -1223,8 +1225,13 @@
                 if (tempNewScore < 0 || tempNewScore === 1) { // Bust
                     shouldSubmitEarly = true;
                 } else if (tempNewScore === 0) { // Potential win
+                    // Check if the *last* dart added (which is `dartsForThisTurn[dartsForThisTurn.length -1]`)
+                    // meets the double out condition if doubleOutActive is true.
+                    // We need to pass the *current* dart (which is `newDartsThrown[newDartsThrown.length - 1]`)
+                    // to the check, not the full `dartsForThisTurn` which is not yet updated.
+                    const lastAddedDart = newDartsThrown[newDartsThrown.length - 1];
                     if (doubleOutActive) {
-                        if (dartsForThisTurn[dartsForThisTurn.length -1].multiplier === 2 && dartsForThisTurn[dartsForThisTurn.length -1].value !== 0) { // Check the *last* dart added
+                        if (lastAddedDart.multiplier === 2 && lastAddedDart.value !== 0) {
                             shouldSubmitEarly = true;
                         }
                     } else { // Straight out win
@@ -1454,6 +1461,7 @@
 
         // Initial render on page load
         document.addEventListener('DOMContentLoaded', () => {
+            console.log("Script loaded and DOMContentLoaded."); // Debug log
             renderNumberKeypad(); // Render number buttons once
             updateUI(); // Initial UI update
         });
