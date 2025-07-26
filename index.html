@@ -440,7 +440,7 @@
         // Funny comments based on turn score (dark humor, more biting)
         const funnyComments = {
             'low': [
-               "T'es vraiment qu'une bite.",
+                "T'es vraiment qu'une bite.",
                 "Même la merde que je chie est de meilleure qualité.",
                 "T'es vraiment qu'un putain de boulet, même ma grand-mère bourrée ferait mieux.",
                 "On dirait que tes fléchettes sont guidées par ton QI : c'est-à-dire, pas très loin.",
@@ -698,7 +698,8 @@
         function processSpeechQueue() {
             if (speakingQueue.length > 0 && !isSpeaking) {
                 isSpeaking = true;
-                const text = speakingQueue.shift();
+                const text = speakingQueue.shift(); // Always a string now
+
                 const utterance = new SpeechSynthesisUtterance(text);
 
                 const maleFrenchVoice = voices.find(voice => voice.lang === 'fr-FR' && (voice.name.includes('male') || voice.name.includes('Male') || voice.name.includes('homme') || voice.name.includes('Homme')));
@@ -1047,6 +1048,7 @@
             let pointsDeductedThisTurn = 0; // For 301/501, actual points deducted
             let winOccurred = false;
             let bustOccurred = false;
+            let totalTurnScore = 0; // Declare totalTurnScore here so it's always defined
 
             let turnMessage = ''; // Main message for the turn (bust, double in, win, etc.)
             let aiVoiceMessages = [];
@@ -1103,7 +1105,6 @@
                 }
 
             } else { // 301/501 game mode logic
-                let totalTurnScore = 0; // Keep track of the total score for this turn for history
                 for (let i = 0; i < dartsForThisTurn.length; i++) {
                     const dart = dartsForThisTurn[i];
                     let dartScoreToDeduct = 0;
@@ -1217,33 +1218,21 @@
 
             // Move to next player if game is not ended
             if (!gameEnded) {
-                // Determine next player
-                const nextPlayerIndex = (currentPlayerIndex + 1) % players.length;
-                const nextPlayerName = players[nextPlayerIndex];
-                const nextPlayerScore = playerScores[nextPlayerName]; // Score or target
+                // Update current player index *before* preparing the next turn's message
+                currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+                updateUI(); // Update UI to show next player immediately
 
-                // Update current player index immediately
-                currentPlayerIndex = nextPlayerIndex;
-                updateUI(); // Update UI to show next player
+                const nextPlayerName = players[currentPlayerIndex];
+                const nextPlayerScore = playerScores[nextPlayerName];
 
-                // Add next turn announcement to the queue
-                const nextTurnAnnouncement = () => {
-                    let msg = `C'est au tour de ${nextPlayerName}.`;
-                    if (!atcMode && nextPlayerScore <= 170 && nextPlayerScore > 1) { // Announce remaining score for 301/501
-                        msg += ` Il vous reste ${nextPlayerScore} points.`;
-                    } else if (atcMode) { // Announce next target for ATC
-                        msg += ` Votre cible est le numéro ${nextPlayerScore === 25 ? 'Bullseye' : nextPlayerScore}.`;
-                    }
-                    msg += ` ${aiComments[Math.floor(Math.random() * aiComments.length)]}`;
-                    speakMessage(msg);
-                };
-
-                // Add a function to the speaking queue that will trigger the next turn announcement
-                // This ensures it happens after all current turn messages
-                speakingQueue.push(nextTurnAnnouncement);
-                if (!isSpeaking) {
-                    processSpeechQueue();
+                let msg = `C'est au tour de ${nextPlayerName}.`;
+                if (!atcMode && nextPlayerScore <= 170 && nextPlayerScore > 1) { // Announce remaining score for 301/501
+                    msg += ` Il vous reste ${nextPlayerScore} points.`;
+                } else if (atcMode) { // Announce next target for ATC
+                    msg += ` Votre cible est le numéro ${nextPlayerScore === 25 ? 'Bullseye' : nextPlayerScore}.`;
                 }
+                msg += ` ${aiComments[Math.floor(Math.random() * aiComments.length)]}`;
+                speakMessage(msg); // Directly add the string message to the queue
 
             } else {
                 updateUI(); // Update UI immediately if game ended
@@ -1377,12 +1366,13 @@
                     // If it was a 301/501 game, and the dart counted, re-add its value
                     // This is a simplification, a full undo would require reverting game state from history
                     // For now, we assume undo is only for current darts not yet submitted.
-                    // If the turn was submitted early, this simple undo won't revert the score.
-                    // A more robust solution would involve storing score checkpoints in history.
-                    // For now, we only allow undoing if the turn is NOT submitted.
                     // This means the undo button should be disabled once submitTurn is called.
                     // The current logic submits turn immediately after 3 darts or early finish.
                     // So, the undo button will only be active *during* a player's turn before submission.
+                    // If a dart was part of a winning/busting turn, its effect is already "baked in"
+                    // and a simple pop() won't revert the score.
+                    // To handle this, a more robust undo would need to store the score *before* each dart.
+                    // For now, we assume undo is only for darts *within* the current, unfinished turn.
                     playerScores[players[currentPlayerIndex]] += removedDart.score; // Revert score visually
                 }
 
