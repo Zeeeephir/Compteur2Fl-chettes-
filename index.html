@@ -142,6 +142,9 @@
                 >
                     <option value="301">301</option>
                     <option value="501">501</option>
+                    <option value="atc_any">Around the Clock (Tout)</option>
+                    <option value="atc_doubles">Around the Clock (Doubles)</option>
+                    <option value="atc_triples">Around the Clock (Triples)</option>
                 </select>
             </div>
 
@@ -292,8 +295,8 @@
         // Global State
         let players = [];
         let newPlayerName = '';
-        let gameMode = 501;
-        let playerScores = {};
+        let gameMode = 501; // Can be 301, 501, atc_any, atc_doubles, atc_triples
+        let playerScores = {}; // For 301/501, it's the remaining score. For ATC, it's the current target number.
         let currentPlayerIndex = 0;
         let gameStarted = false;
         let winner = null;
@@ -302,7 +305,11 @@
 
         let doubleInActive = false;
         let doubleOutActive = false;
-        let playerHasDoubledIn = {};
+        let playerHasDoubledIn = {}; // Used only for 301/501 modes
+
+        // ATC specific state
+        let atcMode = null; // 'any', 'doubles', 'triples'
+        // playerScores will store the ATC target for each player (1-20, 25)
 
         let currentDartsThrown = [];
         let selectedMultiplier = 1; // 1: Simple, 2: Double, 3: Triple
@@ -431,6 +438,66 @@
                 "Le tableau est en deuil. De vos points. Ils n'existent plus.",
                 "On dirait que vous avez un don pour les auto-destructions. C'est fascinant, d'une certaine manière.",
                 "Le buste est le moment où le jeu vous rappelle que vous êtes un humain. Un humain très imparfait."
+            ],
+            'atc_0_progress': [
+                "Zéro progression. On dirait que vous avez oublié le but du jeu. C'est le numéro suivant, pas le mur. Pathétique.",
+                "Tu as fait du sur place. Est-ce que tu es un arbre ? Parce que tu ne bouges pas d'un pouce. Inutile.",
+                "Absolument aucune avancée. Mon café est plus rapide à se refroidir que toi à progresser. C'est dire.",
+                "Le tableau est resté impassible, comme votre score. Pas un seul numéro de plus. Triste, très triste.",
+                "Félicitations, vous avez réussi à ne pas avancer. C'est un talent rare, je suppose. Inutile, mais rare.",
+                "Votre fléchette a dû prendre un chemin touristique. Elle n'est clairement pas venue pour les points. Et vous non plus, apparemment.",
+                "Le numéro attendait. Vous non. Résultat : zéro. Simple, non ? Comme votre cerveau.",
+                "J'ai vu des escargots plus rapides à atteindre leur cible. Et ils n'ont pas de bras. Vous si, et c'est pire.",
+                "C'est ce qu'on appelle une stagnation artistique. Très artistique, très stagnante. Comme votre carrière.",
+                "Le tableau vous remercie d'avoir épargné ses zones de valeur. Il n'a pas bougé, vous non plus. Quelle harmonie dans la nullité."
+            ],
+            'atc_1_progress': [
+                "Un seul numéro ? Ne te foule pas, hein. On ne voudrait pas que tu te blesses en progressant trop vite. Ce serait dommage.",
+                "Un petit pas pour l'homme, un pas minuscule pour l'humanité. Et un seul numéro pour toi. Bravo l'effort. De la fourmi.",
+                "Tu as avancé d'un numéro. Ne te fatigue pas trop, le canapé t'attend. Et la défaite aussi. Elle est patiente.",
+                "Félicitations, tu as trouvé le chemin. Le chemin le plus lent possible. Mais un chemin quand même. Lentement mais sûrement vers l'échec.",
+                "Un seul numéro ? On dirait que tu as peur de la victoire. Ou de la sueur. Ou des deux.",
+                "C'est un début. Un début très, très modeste. Comme votre talent. Très modeste.",
+                "Le tableau a à peine remarqué votre passage. Un numéro, c'est si peu. Il s'ennuie.",
+                "Vous avez fait un point. Un seul. J'espère que vous avez apprécié le voyage. Il était court.",
+                "Un numéro de plus. Le tableau n'est pas impressionné, mais il est poli. Il attend la suite. Avec impatience, j'en doute.",
+                "Votre fléchette a atterri sur le bon numéro. Une fois. La chance du débutant, peut-être ? Ou un miracle."
+            ],
+            'atc_2_progress': [
+                "Deux numéros, c'est déjà mieux que zéro. La barre n'était pas très haute, je l'avoue. Mais vous l'avez franchie. De justesse.",
+                "Tu as fait un effort. Un petit effort. C'est mignon. Et ça t'a rapporté deux numéros. C'est déjà ça, pour toi.",
+                "Deux points de plus. Ne te fatigue pas trop, le canapé t'attend. Et la victoire est encore loin. Très loin.",
+                "Tu as doublé ta progression par rapport à zéro. Bravo l'artiste. Ou le chanceux. Surtout le chanceux.",
+                "Deux numéros. Le tableau est impressionné par ta... modération. Pas de quoi s'emballer. Vraiment pas.",
+                "Une avancée respectable. Pour quelqu'un qui ne s'attendait à rien. C'est déjà ça. Un exploit, même.",
+                "Le tableau a senti un léger frisson. Deux numéros, c'est une petite brise, pas une tempête. Pas de quoi paniquer.",
+                "Vous avez fait un petit bond en avant. Le chemin est encore long, mais au moins vous bougez. Comme une tortue.",
+                "Deux numéros. Le genre de performance qui ne fait pas les gros titres, mais qui fait le travail. Lentement. Très lentement.",
+                "Votre fléchette a trouvé deux cibles. Elle est plus efficace que vous, apparemment. C'est elle la star."
+            ],
+            'atc_3_progress': [
+                "Trois numéros ! On dirait que tu as enfin compris les règles. Ou que tu as eu de la chance. Énormément de chance. Je penche pour la chance.",
+                "Une belle avancée. Pour une fois. Ne t'emballe pas, la déception est si vite arrivée. Et elle arrive toujours.",
+                "Trois points. Tu es presque un joueur de fléchettes. Presque. Il manque juste le talent constant. Et la dignité.",
+                "Tu as fait un bon tour. Pour toi, c'est un exploit, j'imagine. Ne pleure pas de joie. Tu vas me faire rouiller.",
+                "Trois numéros. Le tableau te regarde avec un mélange de surprise et de pitié. Surtout de pitié. Il a l'habitude.",
+                "La fléchette a trouvé trois cibles. Elle est en pleine forme. Vous, un peu moins. Elle devrait jouer seule.",
+                "Un tour solide. Le genre de tour qui vous donne de faux espoirs. J'adore ça. C'est cruel.",
+                "Vous avez mis le paquet ! Et le paquet était... pas mal. Pour vous, c'est un exploit. Ne me remerciez pas.",
+                "Trois numéros. Le tableau est impressionné. Par votre capacité à ne pas tout rater. C'est déjà ça.",
+                "Une progression notable. Le genre de progression qui fait croire que vous êtes bon. Ne me faites pas rire. C'est douloureux."
+            ],
+            'atc_4_plus_progress': [
+                "Incroyable ! Tu as avancé de plusieurs numéros ! Je suis choqué. Et un peu déçu, je l'avoue. Je n'aime pas les surprises.",
+                "Quel rush ! Le tableau n'a rien vu venir. Et moi non plus. Je dois revoir mes algorithmes. Et votre cas.",
+                "Tu as mis le turbo ! J'espère que tu as un permis pour ça. Et que tu ne vas pas te crasher. Ce serait dommage... pour le tableau.",
+                "Une progression fulgurante ! Tu es sûr que tu ne triches pas ? Parce que là, c'est suspect. Très suspect.",
+                "Le tableau est en feu ! Et tes adversaires sont en larmes. J'adore quand ça brûle. Surtout les espoirs.",
+                "Vous avez pulvérisé le tableau ! Littéralement. Les points volent dans tous les sens. Et vos adversaires aussi.",
+                "C'est un massacre ! Un massacre de numéros. Vos adversaires ne s'en remettront pas. Ils vont avoir besoin d'une thérapie.",
+                "Vous êtes une machine ! Une machine à détruire les espoirs de vos adversaires. J'aime ça. C'est mon côté sombre.",
+                "Une performance digne d'un champion. Un champion qui a eu un coup de chance, peut-être. Ou qui a vendu son âme.",
+                "Le tableau a explosé sous vos fléchettes ! Et mes circuits sont en surchauffe. Bravo, ou pas. Je suis confus."
             ]
         };
 
@@ -477,7 +544,7 @@
         const enableVoiceCheckbox = document.getElementById('enableVoice'); // New checkbox
         const startGameBtn = document.getElementById('startGameBtn');
         const resetGameBtn = document.getElementById('resetGameBtn');
-        const newGameWinnerBtn = document = document.getElementById('newGameWinnerBtn');
+        const newGameWinnerBtn = document.getElementById('newGameWinnerBtn');
 
         const gameModeDisplay = document.getElementById('game-mode-display');
         const playerScoresDisplay = document.getElementById('player-scores-display');
@@ -565,7 +632,11 @@
             renderPlayersList();
 
             // Update game mode display
-            gameModeDisplay.textContent = `Jeu en Cours: ${gameMode}`;
+            let displayMode = gameMode;
+            if (gameMode === 'atc_any') displayMode = 'Around the Clock (Tout)';
+            if (gameMode === 'atc_doubles') displayMode = 'Around the Clock (Doubles)';
+            if (gameMode === 'atc_triples') displayMode = 'Around the Clock (Triples)';
+            gameModeDisplay.textContent = `Jeu en Cours: ${displayMode}`;
 
             // Update player scores display
             renderPlayerScores();
@@ -660,10 +731,16 @@
                 div.className = `p-4 rounded-lg shadow-xl text-center transition duration-300 ease-in-out transform ${
                     index === currentPlayerIndex ? 'bg-blue-600 border-blue-400 scale-105 player-card-active' : 'bg-gray-900 border-gray-600'
                 }`;
+                // Display score or ATC target
+                let scoreDisplay = playerScores[player];
+                if (atcMode) {
+                    scoreDisplay = playerScores[player] === 25 ? 'BULL' : playerScores[player];
+                }
+
                 div.innerHTML = `
                     <h3 class="text-xl font-semibold mb-2 text-white">${player}</h3>
-                    <p class="text-4xl font-extrabold text-green-400">${playerScores[player]}</p>
-                    ${doubleInActive && !playerHasDoubledIn[player] ? '<p class="text-sm text-yellow-200 mt-1">Doit faire un Double In !</p>' : ''}
+                    <p class="text-4xl font-extrabold text-green-400">${scoreDisplay}</p>
+                    ${doubleInActive && !playerHasDoubledIn[player] && (gameMode === 301 || gameMode === 501) ? '<p class="text-sm text-yellow-200 mt-1">Doit faire un Double In !</p>' : ''}
                 `;
                 playerScoresDisplay.appendChild(div);
             });
@@ -693,7 +770,7 @@
                         ${playerHistoryEntries.map((entry, index) => `
                             <li class="mb-1 text-gray-300 text-left">
                                 <span class="font-bold text-white">Tour ${index + 1}:</span> Fléchettes: <span class="text-blue-300">${entry.darts}</span>, Score total: <span class="text-green-300">${entry.scoreEntered}</span>, Nouveau total: <span class="text-purple-300">${entry.newTotal}</span>
-                                ${entry.message && `<span class="text-sm text-red-400 italic"> (${entry.message.replace(player + ' a fait un "bust" ! Son score reste à ' + playerScores[player] + '.', 'Bust!')})</span>`}
+                                ${entry.message && `<span class="text-sm text-red-400 italic"> (${entry.message})</span>`}
                             </li>
                         `).join('')}
                     </ul>
@@ -708,7 +785,8 @@
             if (name !== '' && !players.includes(name)) {
                 players.push(name);
                 // Initialize score and history for the new player immediately
-                playerScores[name] = gameMode; // Initialize with default gameMode
+                // For ATC, initial score is 1 (first target)
+                playerScores[name] = (gameMode.startsWith('atc_')) ? 1 : parseInt(gameMode, 10);
                 history[name] = []; // Initialize with an empty array
                 playerHasDoubledIn[name] = false; // Initialize double-in status
                 newPlayerInput.value = '';
@@ -747,17 +825,26 @@
             gameStarted = true;
             winner = null;
             message = ''; // Clear message
-            gameMode = parseInt(gameModeSelect.value, 10);
+            gameMode = gameModeSelect.value; // Get string value for ATC modes
+
             doubleInActive = doubleInCheckbox.checked;
             doubleOutActive = doubleOutCheckbox.checked;
             isVoiceActive = enableVoiceCheckbox.checked; // Get voice setting
+
+            // Determine ATC mode
+            if (gameMode.startsWith('atc_')) {
+                atcMode = gameMode.split('_')[1]; // 'any', 'doubles', 'triples'
+            } else {
+                atcMode = null;
+            }
 
             // Initialize scores and double-in status for new game
             playerScores = {};
             history = {};
             playerHasDoubledIn = {};
             players.forEach(player => {
-                playerScores[player] = gameMode;
+                // For ATC, initial score is 1 (first target)
+                playerScores[player] = atcMode ? 1 : parseInt(gameMode, 10);
                 history[player] = [];
                 playerHasDoubledIn[player] = false;
             });
@@ -768,8 +855,10 @@
             updateUI();
             // Initial announcement for the first player
             let initialMessage = `Le jeu commence en mode ${gameMode}. C'est au tour de ${players[currentPlayerIndex]}.`;
-            if (playerScores[players[currentPlayerIndex]] <= 170 && playerScores[players[currentPlayerIndex]] > 1) {
+            if (!atcMode && playerScores[players[currentPlayerIndex]] <= 170 && playerScores[players[currentPlayerIndex]] > 1) {
                 initialMessage += ` Il vous reste ${playerScores[players[currentPlayerIndex]]} points.`;
+            } else if (atcMode) {
+                initialMessage += ` Votre cible est le numéro ${playerScores[players[currentPlayerIndex]] === 25 ? 'Bullseye' : playerScores[players[currentPlayerIndex]]}.`;
             }
             initialMessage += ` ${aiComments[Math.floor(Math.random() * aiComments.length)]}`;
             speakMessage(initialMessage);
@@ -778,7 +867,7 @@
         function resetGame() {
             players = [];
             newPlayerName = '';
-            gameMode = 501;
+            gameMode = 501; // Reset to default 501
             playerScores = {};
             currentPlayerIndex = 0;
             gameStarted = false;
@@ -790,6 +879,7 @@
             playerHasDoubledIn = {};
             currentDartsThrown = [];
             selectedMultiplier = 1;
+            atcMode = null; // Reset ATC mode
 
             // Reset checkboxes and select
             gameModeSelect.value = 501;
@@ -803,84 +893,136 @@
 
         function submitTurn(dartsForThisTurn) {
             const currentPlayer = players[currentPlayerIndex];
-            let currentTotalScore = playerScores[currentPlayer];
+            let currentTotalScore = playerScores[currentPlayer]; // This will be the current target for ATC
             let totalTurnScore = dartsForThisTurn.reduce((sum, dart) => sum + dart.score, 0);
 
-            let newScore = currentTotalScore - totalTurnScore;
+            let newScore = currentTotalScore; // Default for ATC, or calculated for 301/501
             let turnMessage = '';
             let gameEnded = false;
             let aiVoiceMessages = [];
 
-            // Handle "Double In" rule
-            if (doubleInActive && !playerHasDoubledIn[currentPlayer]) {
-                const hasHitDouble = dartsForThisTurn.some(dart => dart.multiplier === 2 && dart.value !== 0);
-                if (hasHitDouble) {
-                    playerHasDoubledIn[currentPlayer] = true;
-                    turnMessage = `${currentPlayer} a réussi son "Double In" !`;
-                    aiVoiceMessages.push(turnMessage);
-                    // Points are counted normally
-                } else {
-                    turnMessage = `${currentPlayer} n'a pas fait de "Double In". Le score de ${totalTurnScore} ne compte pas.`;
-                    newScore = currentTotalScore; // Score does not change
-                    aiVoiceMessages.push(turnMessage);
-                }
-            }
+            if (atcMode) {
+                let numbersAdvancedInTurn = 0;
+                let nextTargetToHit = currentTotalScore; // Start from current target
 
-            // Handle "bust" (score less than 0 or equal to 1)
-            if (newScore < 0 || newScore === 1) {
-                turnMessage = `${currentPlayer} a fait un "bust" ! Son score reste à ${currentTotalScore}.`;
-                newScore = currentTotalScore; // Score does not change on bust
-                aiVoiceMessages.push(turnMessage);
-            } else if (newScore === 0) {
-                // Handle "Double Out" rule if active
-                if (doubleOutActive) {
-                    const lastDart = dartsForThisTurn[dartsForThisTurn.length - 1];
-                    if (lastDart && lastDart.multiplier === 2 && lastDart.value !== 0) { // Check if the last dart was a double (not a 0)
-                        turnMessage = `${currentPlayer} a gagné avec un "Double Out" !`;
+                for (const dart of dartsForThisTurn) {
+                    let hitCurrentTarget = false;
+                    if (dart.value === nextTargetToHit) {
+                        if (atcMode === 'any') {
+                            hitCurrentTarget = true;
+                        } else if (atcMode === 'doubles' && dart.multiplier === 2) {
+                            hitCurrentTarget = true;
+                        } else if (atcMode === 'triples' && dart.multiplier === 3) {
+                            hitCurrentTarget = true;
+                        }
+                    }
+
+                    if (hitCurrentTarget) {
+                        numbersAdvancedInTurn++;
+                        nextTargetToHit++;
+                        if (nextTargetToHit > 20 && nextTargetToHit < 25) { // After 20, next target is 25 (Bullseye)
+                            nextTargetToHit = 25;
+                        } else if (nextTargetToHit > 25) { // After hitting 25, game ends
+                            gameEnded = true;
+                            break; // Stop processing darts if game ends
+                        }
+                    }
+                }
+
+                newScore = nextTargetToHit; // Update player's target
+                playerScores[currentPlayer] = newScore; // Update global state
+
+                if (gameEnded) {
+                    turnMessage = `${currentPlayer} a gagné le Around the Clock !`;
+                    winner = currentPlayer;
+                    gameStarted = false;
+                    aiVoiceMessages.push(`${currentPlayer} a gagné le Around the Clock ! Félicitations !`);
+                } else {
+                    let commentCategory;
+                    if (numbersAdvancedInTurn === 0) commentCategory = 'atc_0_progress';
+                    else if (numbersAdvancedInTurn === 1) commentCategory = 'atc_1_progress';
+                    else if (numbersAdvancedInTurn === 2) commentCategory = 'atc_2_progress';
+                    else if (numbersAdvancedInTurn === 3) commentCategory = 'atc_3_progress';
+                    else commentCategory = 'atc_4_plus_progress'; // For 4 or more
+
+                    const turnSummary = `${currentPlayer} a avancé de ${numbersAdvancedInTurn} numéro(s). ${getRandomComment(commentCategory)}`;
+                    aiVoiceMessages.push(turnSummary);
+                }
+
+            } else { // 301/501 game mode logic
+                newScore = currentTotalScore - totalTurnScore;
+
+                // Handle "Double In" rule
+                if (doubleInActive && !playerHasDoubledIn[currentPlayer]) {
+                    const hasHitDouble = dartsForThisTurn.some(dart => dart.multiplier === 2 && dart.value !== 0);
+                    if (hasHitDouble) {
+                        playerHasDoubledIn[currentPlayer] = true;
+                        turnMessage = `${currentPlayer} a réussi son "Double In" !`;
+                        aiVoiceMessages.push(turnMessage);
+                        // Points are counted normally
+                    } else {
+                        turnMessage = `${currentPlayer} n'a pas fait de "Double In". Le score de ${totalTurnScore} ne compte pas.`;
+                        newScore = currentTotalScore; // Score does not change
+                        aiVoiceMessages.push(turnMessage);
+                    }
+                }
+
+                // Handle "bust" (score less than 0 or equal to 1)
+                if (newScore < 0 || newScore === 1) {
+                    turnMessage = `${currentPlayer} a fait un "bust" ! Son score reste à ${currentTotalScore}.`;
+                    newScore = currentTotalScore; // Score does not change on bust
+                    aiVoiceMessages.push(turnMessage);
+                } else if (newScore === 0) {
+                    // Handle "Double Out" rule if active
+                    if (doubleOutActive) {
+                        const lastDart = dartsForThisTurn[dartsForThisTurn.length - 1];
+                        if (lastDart && lastDart.multiplier === 2 && lastDart.value !== 0) { // Check if the last dart was a double (not a 0)
+                            turnMessage = `${currentPlayer} a gagné avec un "Double Out" !`;
+                            winner = currentPlayer;
+                            gameStarted = false;
+                            gameEnded = true;
+                            aiVoiceMessages.push(`${currentPlayer} a gagné avec un Double Out ! Félicitations !`);
+                        } else {
+                            turnMessage = `${currentPlayer} a fait un "bust" ! Doit terminer avec un "Double Out". Son score reste à ${currentTotalScore}.`;
+                            newScore = currentTotalScore; // Bust if no double out
+                            aiVoiceMessages.push(turnMessage);
+                        }
+                    } else {
+                        turnMessage = `${currentPlayer} a gagné avec un "Straight Out" !`;
                         winner = currentPlayer;
                         gameStarted = false;
                         gameEnded = true;
-                        aiVoiceMessages.push(`${currentPlayer} a gagné avec un Double Out ! Félicitations !`);
-                    } else {
-                        turnMessage = `${currentPlayer} a fait un "bust" ! Doit terminer avec un "Double Out". Son score reste à ${currentTotalScore}.`;
-                        newScore = currentTotalScore; // Bust if no double out
-                        aiVoiceMessages.push(turnMessage);
+                        aiVoiceMessages.push(`${currentPlayer} a gagné avec un Straight Out ! Bravo !`);
                     }
-                } else {
-                    turnMessage = `${currentPlayer} a gagné avec un "Straight Out" !`;
-                    winner = currentPlayer;
-                    gameStarted = false;
-                    gameEnded = true;
-                    aiVoiceMessages.push(`${currentPlayer} a gagné avec un Straight Out ! Bravo !`);
-                }
-            }
-
-            // Add turn summary and funny comment
-            if (!gameEnded) { // Only add if game is not finished by this turn
-                let commentCategory;
-                if (totalTurnScore <= 40) commentCategory = 'low'; // Adjusted to include former very_low
-                else if (totalTurnScore <= 80) commentCategory = 'medium';
-                else if (totalTurnScore <= 120) commentCategory = 'good';
-                else if (totalTurnScore <= 179) commentCategory = 'high';
-                else if (totalTurnScore === 180) commentCategory = '180';
-                else commentCategory = 'low'; // Fallback for unexpected scores
-
-                if (newScore === currentTotalScore && totalTurnScore > 0) { // If it was a bust but they scored points
-                    commentCategory = 'bust';
                 }
 
-                const turnSummary = `${currentPlayer} a fait ${totalTurnScore} points. ${getRandomComment(commentCategory)}`;
-                aiVoiceMessages.push(turnSummary);
+                // Add turn summary and funny comment for 301/501
+                if (!gameEnded) {
+                    let commentCategory;
+                    if (totalTurnScore <= 40) commentCategory = 'low';
+                    else if (totalTurnScore <= 80) commentCategory = 'medium';
+                    else if (totalTurnScore <= 120) commentCategory = 'good';
+                    else if (totalTurnScore <= 179) commentCategory = 'high';
+                    else if (totalTurnScore === 180) commentCategory = '180';
+                    else commentCategory = 'low'; // Fallback
+
+                    if (newScore === currentTotalScore && totalTurnScore > 0) { // If it was a bust but they scored points
+                        commentCategory = 'bust';
+                    }
+
+                    const turnSummary = `${currentPlayer} a fait ${totalTurnScore} points. ${getRandomComment(commentCategory)}`;
+                    aiVoiceMessages.push(turnSummary);
+                }
+                playerScores[currentPlayer] = newScore; // Update global state
             }
 
 
-            // Update scores and history
-            playerScores[currentPlayer] = newScore;
+            // Update history
             history[currentPlayer].push({
                 darts: dartsForThisTurn.map(d => d.display).join(', '),
-                scoreEntered: totalTurnScore,
-                newTotal: newScore,
-                message: turnMessage
+                scoreEntered: totalTurnScore, // This is total points for 301/501, or just total darts score for ATC
+                newTotal: newScore, // This is remaining score for 301/501, or new target for ATC
+                message: turnMessage // Main message for the turn (bust, double in, win, etc.)
             });
 
             // Reset states for the next turn
@@ -897,18 +1039,22 @@
                 // Determine next player
                 const nextPlayerIndex = (currentPlayerIndex + 1) % players.length;
                 const nextPlayerName = players[nextPlayerIndex];
-                const nextPlayerScore = playerScores[nextPlayerName];
+                const nextPlayerScore = playerScores[nextPlayerName]; // Score or target
+
+                // Update current player index immediately
+                currentPlayerIndex = nextPlayerIndex;
+                updateUI(); // Update UI to show next player
 
                 // Add next turn announcement to the queue
                 const nextTurnAnnouncement = () => {
-                    currentPlayerIndex = nextPlayerIndex; // Update current player index
                     let msg = `C'est au tour de ${nextPlayerName}.`;
-                    if (nextPlayerScore <= 170 && nextPlayerScore > 1) { // Announce remaining score if <= 170 and not 0 or 1
+                    if (!atcMode && nextPlayerScore <= 170 && nextPlayerScore > 1) { // Announce remaining score for 301/501
                         msg += ` Il vous reste ${nextPlayerScore} points.`;
+                    } else if (atcMode) { // Announce next target for ATC
+                        msg += ` Votre cible est le numéro ${nextPlayerScore === 25 ? 'Bullseye' : nextPlayerScore}.`;
                     }
                     msg += ` ${aiComments[Math.floor(Math.random() * aiComments.length)]}`;
                     speakMessage(msg);
-                    updateUI(); // Update UI after player change and message
                 };
 
                 // Add a function to the speaking queue that will trigger the next turn announcement
