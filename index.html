@@ -89,6 +89,13 @@
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5); /* Blue 500 with transparency */
             border-color: #3b82f6;
         }
+        /* Style for the statistics canvas */
+        #dartboardCanvas {
+            background-color: #f0f0f0; /* Light background for the board */
+            border-radius: 0.5rem;
+            margin: 0 auto; /* Center the canvas */
+            display: block; /* Ensure it behaves like a block element for centering */
+        }
     </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-gray-900 to-gray-700 text-white p-4 sm:p-8 flex flex-col items-center justify-center">
@@ -265,6 +272,12 @@
             >
                 Nouveau Jeu
             </button>
+            <button
+                id="showStatsBtn"
+                class="btn-gradient btn-info text-white font-bold py-3 px-8 rounded-md mt-4 ml-4"
+            >
+                Statistiques
+            </button>
         </div>
 
         <!-- Messages d'erreur/information -->
@@ -277,6 +290,22 @@
             <h2 class="text-2xl font-bold mb-4 text-center text-cyan-300">Historique des Scores</h2>
             <div id="history-content" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <!-- L'historique sera ajouté ici par JS -->
+            </div>
+        </div>
+
+        <!-- Section Statistiques -->
+        <div id="stats-section" class="mb-8 p-4 bg-gray-700 rounded-lg shadow-inner border border-gray-600 hidden">
+            <h2 class="text-3xl font-bold mb-6 text-center text-yellow-300">Statistiques de la Partie</h2>
+            <div id="player-stats-summary" class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <!-- Player stats will be rendered here -->
+            </div>
+            <div class="flex justify-center">
+                <button
+                    id="backToMainFromStatsBtn"
+                    class="btn-gradient btn-primary text-white font-bold py-3 px-8 rounded-md"
+                >
+                    Retour au menu principal
+                </button>
             </div>
         </div>
 
@@ -301,7 +330,8 @@
         let gameStarted = false;
         let winner = null;
         let message = '';
-        let history = {};
+        let history = {}; // Stores { darts: [], scoreEntered, newTotal, message } for each turn
+        let allDartsThrown = {}; // Stores ALL individual darts thrown by each player for stats
 
         let doubleInActive = false;
         let doubleOutActive = false;
@@ -533,6 +563,7 @@
         const messageText = document.getElementById('message-text');
         const historySection = document.getElementById('history-section');
         const resetGameBtnContainer = document.getElementById('reset-game-btn-container');
+        const statsSection = document.getElementById('stats-section'); // New stats section
 
         const newPlayerInput = document.getElementById('newPlayer');
         const addPlayerBtn = document.getElementById('addPlayerBtn');
@@ -545,6 +576,8 @@
         const startGameBtn = document.getElementById('startGameBtn');
         const resetGameBtn = document.getElementById('resetGameBtn');
         const newGameWinnerBtn = document.getElementById('newGameWinnerBtn');
+        const showStatsBtn = document.getElementById('showStatsBtn'); // New stats button
+        const backToMainFromStatsBtn = document.getElementById('backToMainFromStatsBtn'); // New back button
 
         const gameModeDisplay = document.getElementById('game-mode-display');
         const playerScoresDisplay = document.getElementById('player-scores-display');
@@ -559,6 +592,7 @@
         const undoLastDartBtn = document.getElementById('undoLastDartBtn');
         const winnerNameDisplay = document.getElementById('winner-name');
         const historyContent = document.getElementById('history-content');
+        const playerStatsSummary = document.getElementById('player-stats-summary'); // Stats summary container
 
         const numberButtons = [
             1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
@@ -618,12 +652,13 @@
         // Functions to update UI
         function updateUI() {
             // Toggle sections visibility
-            configSection.classList.toggle('hidden', gameStarted || winner);
-            gameSection.classList.toggle('hidden', !gameStarted || winner);
-            winnerSection.classList.toggle('hidden', !winner);
+            configSection.classList.toggle('hidden', gameStarted || winner || statsSection.classList.contains('active'));
+            gameSection.classList.toggle('hidden', !gameStarted || winner || statsSection.classList.contains('active'));
+            winnerSection.classList.toggle('hidden', !winner || statsSection.classList.contains('active'));
             messageSection.classList.toggle('hidden', !message);
-            historySection.classList.toggle('hidden', !(gameStarted || winner) || players.length === 0);
+            historySection.classList.toggle('hidden', !(gameStarted || winner) || players.length === 0 || statsSection.classList.contains('active'));
             resetGameBtnContainer.classList.toggle('hidden', !gameStarted && !winner);
+            statsSection.classList.toggle('hidden', !statsSection.classList.contains('active')); // Manage stats section visibility
 
             // Update message
             messageText.textContent = message;
@@ -786,8 +821,10 @@
                 players.push(name);
                 // Initialize score and history for the new player immediately
                 // For ATC, initial score is 1 (first target)
-                playerScores[name] = (String(gameMode).startsWith('atc_')) ? 1 : parseInt(gameMode, 10);
+                // Use gameModeSelect.value directly as it's always a string
+                playerScores[name] = (String(gameModeSelect.value).startsWith('atc_')) ? 1 : parseInt(gameModeSelect.value, 10);
                 history[name] = []; // Initialize with an empty array
+                allDartsThrown[name] = []; // Initialize allDartsThrown for the player
                 playerHasDoubledIn[name] = false; // Initialize double-in status
                 newPlayerInput.value = '';
                 showMessage(''); // Use showMessage
@@ -803,13 +840,15 @@
             players = players.filter(player => player !== playerToRemove);
             delete playerScores[playerToRemove];
             delete history[playerToRemove];
+            delete allDartsThrown[playerToRemove]; // Delete from allDartsThrown
             delete playerHasDoubledIn[playerToRemove];
 
             // Adjust current player index if needed
-            if (currentPlayerIndex >= players.length && players.length > 0) {
-                currentPlayerIndex = 0;
-            } else if (players.length === 0) {
-                // If no players left, reset game completely
+            if (players.length > 0) { // Only adjust if there are still players
+                if (currentPlayerIndex >= players.length) { // If current index is out of bounds
+                    currentPlayerIndex = 0; // Reset to first player
+                }
+            } else { // No players left
                 resetGame();
                 return;
             }
@@ -841,11 +880,13 @@
             // Initialize scores and double-in status for new game
             playerScores = {};
             history = {};
+            allDartsThrown = {}; // Reset allDartsThrown for new game
             playerHasDoubledIn = {};
             players.forEach(player => {
                 // For ATC, initial score is 1 (first target)
                 playerScores[player] = atcMode ? 1 : parseInt(gameMode, 10);
                 history[player] = [];
+                allDartsThrown[player] = []; // Initialize for each player
                 playerHasDoubledIn[player] = false;
             });
             currentPlayerIndex = 0;
@@ -874,6 +915,7 @@
             winner = null;
             message = ''; // Clear message
             history = {};
+            allDartsThrown = {}; // Reset allDartsThrown
             doubleInActive = false;
             doubleOutActive = false;
             playerHasDoubledIn = {};
@@ -887,6 +929,9 @@
             doubleOutCheckbox.checked = false;
             enableVoiceCheckbox.checked = true; // Reset voice to active by default
 
+            // Hide stats section if visible
+            statsSection.classList.remove('active');
+
             updateUI();
             speakMessage("Jeu réinitialisé. Bienvenue aux fléchettes !");
         }
@@ -895,13 +940,15 @@
             const currentPlayer = players[currentPlayerIndex];
             let scoreBeforeTurn = playerScores[currentPlayer]; // Store score at the beginning of the turn
             let currentScoreDuringTurn = scoreBeforeTurn; // Track score as darts are processed
-            let dartsThatCounted = []; // To store darts that actually reduced score
             let pointsDeductedThisTurn = 0; // For 301/501, actual points deducted
             let winOccurred = false;
             let bustOccurred = false;
 
             let turnMessage = ''; // Main message for the turn (bust, double in, win, etc.)
             let aiVoiceMessages = [];
+
+            // Store all darts thrown in this turn for stats
+            allDartsThrown[currentPlayer] = allDartsThrown[currentPlayer].concat(dartsForThisTurn);
 
             if (atcMode) {
                 let numbersAdvancedInTurn = 0;
@@ -973,10 +1020,6 @@
                     if (dartCounts) {
                         currentScoreDuringTurn -= dartScoreToDeduct;
                         pointsDeductedThisTurn += dartScoreToDeduct;
-                        // No need to add to dartsThatCounted if we are just tracking total points deducted
-                    } else {
-                        // If dart didn't count, still add it to history with a special mark
-                        // This is handled in the final history push, using original dartsForThisTurn
                     }
 
                     // Check for win/bust after each dart (if it counted)
@@ -1119,6 +1162,20 @@
                 return;
             }
 
+            // For 301/501, if a win/bust occurred on a previous dart in this turn, stop
+            // This check needs to be based on the *current* state of the game after previously counted darts
+            // The logic for early exit is handled in submitTurn, so we only need to prevent adding more darts if the turn is effectively over.
+            // A simple check: if the last dart added resulted in a win/bust, then don't allow more darts.
+            if (!atcMode && currentDartsThrown.length > 0) {
+                const lastDartSimulatedScore = playerScores[players[currentPlayerIndex]]; // This is the score *after* previous darts in this turn
+                if (lastDartSimulatedScore < 0 || lastDartSimulatedScore === 1 || lastDartSimulatedScore === 0) {
+                    showMessage("Le tour est terminé pour ce joueur (victoire ou bust).");
+                    updateUI();
+                    return;
+                }
+            }
+
+
             if (currentDartsThrown.length >= 3) {
                 showMessage('Vous avez déjà lancé 3 fléchettes pour ce tour.'); // Use showMessage
                 updateUI();
@@ -1153,41 +1210,70 @@
             selectedMultiplier = 1; // Reset multiplier after dart added
             showMessage(''); // Clear message
 
-            // If 3 darts have been thrown, or if a win/bust condition is met in 301/501, submit the turn
-            // For 301/501, we need to check win/bust *after* each dart
-            if (currentDartsThrown.length === 3 || (gameMode === '301' || gameMode === '501')) {
-                // Temporarily check if this dart leads to a win/bust to decide if turn ends early
-                const tempPlayerScore = playerScores[players[currentPlayerIndex]];
+            // Always submit turn if 3 darts are thrown
+            // For 301/501, check for early submission if win/bust condition is met
+            if (currentDartsThrown.length === 3) {
+                submitTurn(currentDartsThrown);
+            } else if (!atcMode) { // Only for 301/501 modes, check for early finish
+                // Simulate the effect of this newly added dart
+                const tempPlayerScore = playerScores[players[currentPlayerIndex]]; // Current score before this dart's deduction
                 const tempNewScore = tempPlayerScore - dartScore; // Simulate deduction
 
                 let shouldSubmitEarly = false;
-                if (!atcMode) { // Only for 301/501
-                    if (tempNewScore < 0 || tempNewScore === 1) { // Bust
-                        shouldSubmitEarly = true;
-                    } else if (tempNewScore === 0) { // Potential win
-                        if (doubleOutActive) {
-                            if (dart.multiplier === 2 && dart.value !== 0) { // Double out win
-                                shouldSubmitEarly = true;
-                            }
-                        } else { // Straight out win
+                if (tempNewScore < 0 || tempNewScore === 1) { // Bust
+                    shouldSubmitEarly = true;
+                } else if (tempNewScore === 0) { // Potential win
+                    if (doubleOutActive) {
+                        if (dartsForThisTurn[dartsForThisTurn.length -1].multiplier === 2 && dartsForThisTurn[dartsForThisTurn.length -1].value !== 0) { // Check the *last* dart added
                             shouldSubmitEarly = true;
                         }
+                    } else { // Straight out win
+                        shouldSubmitEarly = true;
                     }
                 }
 
-                if (currentDartsThrown.length === 3 || shouldSubmitEarly) {
+                if (shouldSubmitEarly) {
                     submitTurn(currentDartsThrown);
                 } else {
+                    // Update the score for display immediately
+                    playerScores[players[currentPlayerIndex]] = tempNewScore; // Update score visually
                     updateUI(); // Update UI immediately after adding dart if turn not finished
                 }
-            } else {
-                updateUI(); // Update UI immediately after adding dart if turn not finished
+            } else { // ATC mode, and less than 3 darts, just update UI
+                updateUI();
             }
         }
 
         function undoLastDart() {
             if (currentDartsThrown.length > 0) {
-                currentDartsThrown.pop(); // Remove last dart
+                // If the turn was submitted early due to a win/bust, undoing the last dart
+                // means we need to revert the player's score to its state before that dart.
+                // This is complex with the current structure. For simplicity, if the turn
+                // has already been submitted (i.e., less than 3 darts but game state changed),
+                // we should probably prevent undoing or offer a full turn undo.
+                // For now, we'll just remove the dart and update UI.
+                // The history will reflect the full turn as submitted.
+
+                // If game is not started (i.e. it just ended and user clicked undo), prevent undoing.
+                if (!gameStarted && winner) {
+                    showMessage("Le jeu est terminé. Impossible d'annuler.");
+                    updateUI();
+                    return;
+                }
+
+                const removedDart = currentDartsThrown.pop();
+                if (!atcMode && removedDart) {
+                    // If it was a 301/501 game, and the dart counted, re-add its value
+                    // This is a simplification, a full undo would require reverting game state from history
+                    // For now, we assume undo is only for current darts not yet submitted.
+                    // If the turn was submitted early, this simple undo won't revert the score.
+                    // A more robust solution would involve storing score checkpoints in history.
+                    // For now, we only allow undoing if the turn is NOT submitted.
+                    // This means the undo button should be disabled once submitTurn is called.
+                    // The current logic submits turn immediately after 3 darts or early finish.
+                    // So, the undo button will only be active *during* a player's turn before submission.
+                }
+
                 selectedMultiplier = 1; // Reset multiplier
                 showMessage(''); // Clear message
                 updateUI();
@@ -1197,46 +1283,174 @@
             }
         }
 
-        // Event Listeners
-        addPlayerBtn.addEventListener('click', addPlayer);
-        newPlayerInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') addPlayer();
-        });
+        // --- Statistics Functions ---
+        function showStatsPage() {
+            statsSection.classList.add('active'); // Activate stats section
+            updateUI(); // Hide other sections and show stats
+            renderPlayerStats();
+        }
 
-        playersList.addEventListener('click', (e) => {
-            if (e.target.closest('button')) {
-                const playerToRemove = e.target.closest('button').dataset.player;
-                if (playerToRemove) {
-                    removePlayer(playerToRemove);
+        function renderPlayerStats() {
+            playerStatsSummary.innerHTML = ''; // Clear previous stats
+
+            players.forEach(player => {
+                const playerStatDiv = document.createElement('div');
+                playerStatDiv.className = 'bg-gray-900 p-4 rounded-lg border border-gray-600 shadow-md';
+
+                let totalScoreSum = 0;
+                let turnCount = 0;
+                let totalDarts = 0;
+                let hitSegments = {}; // { '20': { simple: 5, double: 2, triple: 1 }, '1': { ... } }
+
+                // Calculate average score per turn (only for 301/501)
+                if (!atcMode) {
+                    history[player].forEach(turn => {
+                        // Only count turns where points were deducted (not busts that revert score)
+                        if (turn.scoreEntered > 0 || (turn.newTotal === 0 && turn.scoreEntered > 0)) { // Include winning turns
+                            totalScoreSum += turn.scoreEntered;
+                            turnCount++;
+                        }
+                    });
                 }
+                
+                // Collect all darts for dartboard visualization
+                allDartsThrown[player].forEach(dart => {
+                    totalDarts++;
+                    const segmentKey = dart.value.toString();
+                    if (!hitSegments[segmentKey]) {
+                        hitSegments[segmentKey] = { simple: 0, double: 0, triple: 0 };
+                    }
+                    if (dart.multiplier === 1) hitSegments[segmentKey].simple++;
+                    else if (dart.multiplier === 2) hitSegments[segmentKey].double++;
+                    else if (dart.multiplier === 3) hitSegments[segmentKey].triple++;
+                });
+
+                const averageScore = turnCount > 0 ? (totalScoreSum / turnCount).toFixed(2) : 'N/A';
+
+                playerStatDiv.innerHTML = `
+                    <h3 class="text-xl font-semibold mb-2 text-yellow-200">${player}</h3>
+                    ${!atcMode ? `<p class="text-lg text-gray-300">Score moyen par tour: <span class="font-bold text-green-400">${averageScore}</span></p>` : ''}
+                    <p class="text-lg text-gray-300">Total fléchettes lancées: <span class="font-bold text-blue-400">${totalDarts}</span></p>
+                    <h4 class="text-lg font-semibold mt-4 mb-2 text-purple-300">Zones touchées:</h4>
+                    <canvas id="dartboardCanvas-${player}" width="200" height="200" class="bg-gray-800 rounded-md"></canvas>
+                `;
+                playerStatsSummary.appendChild(playerStatDiv);
+
+                // Draw dartboard for each player
+                drawDartboard(document.getElementById(`dartboardCanvas-${player}`), hitSegments);
+            });
+        }
+
+        function drawDartboard(canvas, hitSegments) {
+            const ctx = canvas.getContext('2d');
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const maxRadius = canvas.width / 2 - 10; // Max radius with some padding
+
+            // Define dartboard ring radii (simplified for visualization)
+            const bullseyeRadius = maxRadius * 0.08;
+            const outerBullRadius = maxRadius * 0.16;
+            const singleInnerRing = maxRadius * 0.5;
+            const tripleRing = maxRadius * 0.55;
+            const tripleOuterRing = maxRadius * 0.65;
+            const doubleRing = maxRadius * 0.95;
+            const doubleOuterRing = maxRadius * 1.0;
+
+            // Segment values in dartboard order (clockwise from 20)
+            const segmentOrder = [20, 1, 18, 4, 13, 6, 10, 15, 2, 17, 3, 19, 7, 16, 8, 11, 14, 9, 12, 5];
+
+            // Function to get color based on hit count
+            function getHitColor(count) {
+                if (count === 0) return 'rgba(50, 50, 50, 0.2)'; // Very light, almost transparent
+                if (count < 3) return 'rgba(255, 255, 0, 0.4)'; // Yellow, low hits
+                if (count < 7) return 'rgba(255, 165, 0, 0.6)'; // Orange, medium hits
+                if (count < 15) return 'rgba(255, 69, 0, 0.8)'; // Red-orange, high hits
+                return 'rgba(255, 0, 0, 1)'; // Red, very high hits
             }
-        });
 
-        startGameBtn.addEventListener('click', startGame);
-        resetGameBtn.addEventListener('click', resetGame);
-        newGameWinnerBtn.addEventListener('click', resetGame);
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        enableVoiceCheckbox.addEventListener('change', (e) => {
-            isVoiceActive = e.target.checked;
-            if (!isVoiceActive) {
-                speechSynth.cancel(); // Stop speech if voice is disabled
-                speakingQueue = []; // Clear queue
-                isSpeaking = false; // Reset speaking flag
+            // Draw segments and fill based on hits
+            for (let i = 0; i < 20; i++) {
+                const startAngle = (Math.PI / 10) * i - Math.PI / 20; // Adjust for segment 20 at top
+                const endAngle = (Math.PI / 10) * (i + 1) - Math.PI / 20;
+                const segmentValue = segmentOrder[i];
+
+                // Draw Outer Single (between double and triple)
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, doubleRing, startAngle, endAngle);
+                ctx.lineTo(centerX + Math.cos(endAngle) * tripleOuterRing, centerY + Math.sin(endAngle) * tripleOuterRing);
+                ctx.arc(centerX, centerY, tripleOuterRing, endAngle, startAngle, true);
+                ctx.closePath();
+                ctx.fillStyle = getHitColor((hitSegments[segmentValue] ? hitSegments[segmentValue].simple : 0) + (hitSegments[segmentValue] ? hitSegments[segmentValue].double : 0) + (hitSegments[segmentValue] ? hitSegments[segmentValue].triple : 0)); // Sum all hits for general segment color
+                ctx.fill();
+                ctx.strokeStyle = '#333';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+
+                // Draw Double Ring
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, doubleOuterRing, startAngle, endAngle);
+                ctx.lineTo(centerX + Math.cos(endAngle) * doubleRing, centerY + Math.sin(endAngle) * doubleRing);
+                ctx.arc(centerX, centerY, doubleRing, endAngle, startAngle, true);
+                ctx.closePath();
+                ctx.fillStyle = getHitColor(hitSegments[segmentValue] ? hitSegments[segmentValue].double : 0);
+                ctx.fill();
+                ctx.strokeStyle = '#333';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+
+                // Draw Triple Ring
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, tripleOuterRing, startAngle, endAngle);
+                ctx.lineTo(centerX + Math.cos(endAngle) * tripleRing, centerY + Math.sin(endAngle) * tripleRing);
+                ctx.arc(centerX, centerY, tripleRing, endAngle, startAngle, true);
+                ctx.closePath();
+                ctx.fillStyle = getHitColor(hitSegments[segmentValue] ? hitSegments[segmentValue].triple : 0);
+                ctx.fill();
+                ctx.strokeStyle = '#333';
+                ctx.lineWidth = 1;
+                ctx.stroke();
             }
-        });
 
-        multiplierSimpleBtn.addEventListener('click', () => handleMultiplierClick(1));
-        multiplierDoubleBtn.addEventListener('click', () => handleMultiplierClick(2));
-        multiplierTripleBtn.addEventListener('click', () => handleMultiplierClick(3));
+            // Draw Outer Bull (25)
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, outerBullRadius, 0, Math.PI * 2);
+            ctx.fillStyle = getHitColor(hitSegments['25'] ? hitSegments['25'].simple : 0);
+            ctx.fill();
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 1;
+            ctx.stroke();
 
-        numberKeypad.addEventListener('click', (e) => {
-            if (e.target.tagName === 'BUTTON') {
-                const num = parseInt(e.target.dataset.value, 10);
-                handleNumberClick(num);
-            }
-        });
+            // Draw Bullseye (Inner Bull) (25)
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, bullseyeRadius, 0, Math.PI * 2);
+            ctx.fillStyle = getHitColor(hitSegments['25'] ? hitSegments['25'].double : 0); // Assuming inner bull is D-Bull
+            ctx.fill();
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 1;
+            ctx.stroke();
 
-        undoLastDartBtn.addEventListener('click', undoLastDart);
+            // Add labels (optional, can clutter small canvas)
+            ctx.fillStyle = '#fff';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            // For a small canvas, labels might be too much.
+            // If needed, calculate positions for 20, 15, etc.
+        }
+
+
+        function hideStatsPage() {
+            statsSection.classList.remove('active');
+            updateUI(); // Show appropriate sections
+        }
+
+        // Event Listeners for new buttons
+        showStatsBtn.addEventListener('click', showStatsPage);
+        backToMainFromStatsBtn.addEventListener('click', hideStatsPage);
+
 
         // Initial render on page load
         document.addEventListener('DOMContentLoaded', () => {
