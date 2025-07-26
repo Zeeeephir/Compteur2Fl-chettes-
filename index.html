@@ -501,7 +501,7 @@
                 "Tu es la médiocrité incarnée, même tes scores sont des bâtards.",
                 "Ni bon, ni mauvais. C'est le score du mec qui pue de la gueule mais qui s'en rend pas compte.",
                 "C'est le niveau du gars qui est content quand il arrive à se torcher le cul tout seul.",
-                "Un score qui donne envie de te gifler, juste pour que tu te réveilles.",             
+                "Un score qui donne envie de te gifler, juste pour que tu te réveilles.",           
                 "Ton score, c'est comme ta vie sexuelle : tellement moyen que personne n'en parle et que tout le monde s'en fout.",
                 "T'as fait un score de chie-mou, ni bon, ni mauvais, juste pathétique.",
                 "C'est la performance d'une vieille pute fatiguée : ça fait le job, mais sans aucune dignité.",
@@ -1176,10 +1176,10 @@
             updateUI();
             // Initial announcement for the first player
             let initialMessage = `Le jeu commence en mode ${gameMode}. C'est au tour de ${players[currentPlayerIndex]}.`;
-            if (!atcMode && playerScores[players[currentPlayerIndex]] <= 170 && playerScores[players[currentPlayerIndex]] > 1) {
-                initialMessage += ` Il vous reste ${playerScores[players[currentPlayerIndex]]} points.`;
+            if (!atcMode && playerScores[players[currentPlayerIndex]] <= 170 && playerScores[players[currentPlayer]] > 1) {
+                initialMessage += ` Il vous reste ${playerScores[players[currentPlayer]]} points.`;
             } else if (atcMode) {
-                initialMessage += ` Votre cible est le numéro ${playerScores[players[currentPlayerIndex]] === 25 ? 'Bullseye' : playerScores[players[currentPlayerIndex]]}.`;
+                initialMessage += ` Votre cible est le numéro ${playerScores[players[currentPlayer]] === 25 ? 'Bullseye' : playerScores[players[currentPlayer]]}.`;
             }
             // Keep the initial AI comment for the very start of the game
             initialMessage += ` ${aiComments[Math.floor(Math.random() * aiComments.length)]}`;
@@ -1556,15 +1556,22 @@
                     shouldSubmitEarly = true;
                 }
             } else { // X01 modes
-                if (playerScores[currentPlayer] < 0 || playerScores[currentPlayer] === 1) { // Bust
+                if (playerScores[currentPlayer] < 0 || playerScores[currentPlayer] === 1) { // Bust due to score < 0 or === 1
                     shouldSubmitEarly = true;
-                } else if (playerScores[currentPlayer] === 0) { // Potential win
+                } else if (playerScores[currentPlayer] === 0) { // Potential win or bust due to non-double out
                     const lastAddedDart = newDart; // The most recently added dart
                     if (doubleOutActive) {
-                        if (lastAddedDart.multiplier === 2 && lastAddedDart.value !== 0) {
+                        if (lastAddedDart.multiplier === 2 && lastAddedDart.value !== 0) { // Valid double out
                             shouldSubmitEarly = true;
-                        }
-                    } else { // Straight out win
+                        } else { // <--- DÉBUT DE LA CORRECTION DU BUG
+                            // Hit 0 but not with a double when Double Out is active -> THIS IS THE BUST CONDITION
+                            // We need to force a bust here and revert the score immediately for display
+                            playerScores[currentPlayer] = scoreAtStartOfTurn; // Revert score for display
+                            showMessage(`${currentPlayer} a fait un "bust" ! Doit terminer avec un "Double Out". Score rétabli à ${scoreAtStartOfTurn}.`);
+                            speakMessage(getRandomComment('bust'));
+                            shouldSubmitEarly = true; // Submit turn immediately
+                        } // <--- FIN DE LA CORRECTION DU BUG
+                    } else { // Straight out win (no double out rule)
                         shouldSubmitEarly = true;
                     }
                 }
