@@ -311,108 +311,99 @@
         let isVoiceActive = true; // Default to active
         let speechSynth = window.speechSynthesis;
         let voices = [];
+        let speakingQueue = []; // Queue for sequential speaking
+        let isSpeaking = false; // Flag to indicate if speech is in progress
 
         // Pre-defined AI comments/citations for general turn announcements
         const aiComments = [
-            "Bonne chance pour ce tour !",
-            "Que les fléchettes soient avec vous.",
-            "Visez juste !",
-            "La précision est la clé.",
-            "Un bon lancer commence par une bonne intention.",
-            "Le tableau vous attend.",
-            "Concentration maximale !",
-            "Chaque point compte.",
-            "Le chemin vers la victoire est pavé de doubles.",
-            "Un triple, et c'est la gloire !",
-            "Attention au buste !",
-            "Le sang-froid est votre meilleur allié."
+            "Attention, le destin de cette partie repose sur vos épaules... ou sur votre poignet.",
+            "Le silence est d'or, mais les points sont platine. À vous de jouer.",
+            "Chaque fléchette est une promesse. Tenez la vôtre, si vous osez.",
+            "Le tableau attend votre verdict. Ne le décevez pas, ou il pourrait vous juger.",
+            "La pression est un privilège. Profitez-en... ou craquez.",
+            "Un nouveau tour, une nouvelle chance de ne pas vous ridiculiser. Allez-y.",
+            "Le chemin vers la victoire est semé d'embûches. Et de triples.",
+            "N'oubliez pas : le perdant paie la tournée. Motivation ?",
+            "Le sort est jeté... enfin, la fléchette est lancée.",
+            "La légende vous attend. Ou la défaite cuisante. À vous de choisir."
         ];
 
-        // Funny comments based on turn score
+        // Funny comments based on turn score (dark humor, more biting)
         const funnyComments = {
             'very_low': [
-                "Oups, on dirait que la fléchette a pris un chemin inattendu. Peut-être qu'elle cherchait un café ?",
-                "Un score qui ferait pleurer une mouche. Courage, ça ne peut que s'améliorer !",
-                "Est-ce que c'était une fléchette ou un papillon qui volait ?",
-                "On a vu plus de points dans un fromage suisse. Réessayez !",
-                "Félicitations, vous avez évité le tableau avec brio. C'était l'objectif, non ?",
-                "Votre fléchette a décidé de prendre des vacances. Elle reviendra, peut-être avec plus de points.",
-                "C'est ce qu'on appelle un score... minimaliste. Très minimaliste.",
-                "On dirait que votre fléchette a peur du noir. Visez la lumière la prochaine fois !",
-                "Le score est si bas qu'il a froid. Donnez-lui une veste !",
-                "Je crois que votre fléchette a glissé sur une peau de banane. Ça arrive aux meilleurs... ou pas."
+                "T'as vraiment une petite bite sérieux quoi !"
             ],
             'low': [
-                "Pas de quoi casser trois pattes à un canard, mais c'est un début !",
-                "On progresse, lentement mais sûrement... très sûrement.",
-                "C'est un score modeste, mais l'important c'est de participer, n'est-ce pas ?",
-                "Votre fléchette a atterri, c'est déjà ça ! Les points viendront plus tard.",
-                "Un petit pas pour l'homme, un petit score pour le joueur. La suite ?",
-                "On dirait que votre fléchette a fait une sieste en chemin. Réveillez-la !",
-                "C'est comme un régime : on commence doucement. Très doucement.",
-                "Votre score est comme un secret bien gardé : personne ne le verra venir.",
-                "La fléchette a touché le tableau. C'est un bon début pour un aveugle.",
-                "Vous avez trouvé le chemin... vers les petits chiffres. Bravo pour la cohérence !"
+                "Un score qui fait douter de l'existence de vos yeux. Ou de vos mains.",
+                "C'est un score. Techniquement. Un score qui ne mènera nulle part, mais un score.",
+                "Vous êtes sur la bonne voie... si la bonne voie mène à la défaite humiliante.",
+                "La fléchette a touché le tableau. Le tableau s'en remettra. Votre réputation, moins.",
+                "À ce rythme, le jeu durera plus longtemps que votre carrière de joueur de fléchettes. Ce qui n'est pas peu dire.",
+                "Ce n'est pas terrible. C'est juste... une perte de temps pour tout le monde.",
+                "Votre score est un mystère. Le mystère de comment on peut être aussi mauvais avec autant d'efforts.",
+                "On dirait que vous jouez aux fléchettes avec un handicap invisible. Ou visible.",
+                "La moyenne, c'est pour les peureux. Vous, vous êtes juste... en dessous. Un vrai rebelle de la nullité.",
+                "Votre fléchette a fait un tour de reconnaissance avant d'atterrir timidement. Elle avait honte."
             ],
             'medium': [
-                "Un score respectable, on sent le potentiel !",
-                "Bien joué, ça commence à ressembler à des fléchettes !",
-                "Ni bon, ni mauvais. Juste... efficace. Continuez comme ça !",
-                "La moyenne, c'est bien. Mais le top, c'est mieux !",
-                "Vous êtes sur la bonne voie, continuez à viser le centre... ou pas.",
-                "Un score solide, comme un bon vieux chêne. Pas spectaculaire, mais fiable.",
-                "C'est un score qui dit : 'Je suis là, mais je ne veux pas faire de vagues.'",
-                "Votre fléchette a trouvé sa place. Elle n'est pas la star, mais elle est là.",
-                "Un score qui ne fera pas la une des journaux, mais qui fait le travail. Efficace !",
-                "Vous êtes le juste milieu. L'équilibre parfait entre le génie et le désastre."
+                "Un score correct. Pour quelqu'un qui n'a jamais touché une fléchette de sa vie. Ah, c'est pas votre cas ?",
+                "Pas mal. Pour un amateur. Ou un professionnel qui a bu un peu trop.",
+                "Vous êtes dans le ventre mou du classement. Là où les rêves meurent lentement.",
+                "Ce score ne fera pas la une des journaux, mais il ne vous fera pas non plus vomir. C'est déjà ça.",
+                "La fléchette a trouvé sa cible. Pas la meilleure, mais une cible quand même. La médiocrité a du bon.",
+                "Un score qui dit : 'J'ai essayé. Et j'ai échoué à être exceptionnel.'",
+                "Vous êtes un artiste de la banalité. Chaque point est une touche de conformisme.",
+                "On dirait que vous avez un talent pour les scores qui ne dérangent personne. Sauf peut-être vos coéquipiers.",
+                "Votre score est comme une blague moyenne : elle passe, mais on ne s'en souviendra pas. Comme vous.",
+                "La fléchette a atterri. Le tableau n'a pas été impressionné, mais il a hoché la tête poliment. Il est habitué."
             ],
             'good': [
-                "Impressionnant ! Le tableau tremble encore !",
-                "Très beau score, la fléchette a trouvé son chemin !",
-                "Vous chauffez, vous chauffez... Le 180 n'est pas loin !",
-                "Un score qui fait plaisir à voir. C'est ça, le talent !",
-                "La fléchette a dansé sur le tableau. Magnifique prestation !",
-                "Vous avez mis le paquet ! Ce score en dit long sur votre détermination.",
-                "Un score qui donne le sourire. Continuez à nous épater !",
-                "La fléchette a chanté en atterrissant. Une mélodie de points !",
-                "C'est un score qui mérite des applaudissements. Bravo l'artiste !",
-                "Vous avez transformé le tableau en chef-d'œuvre. Chaque fléchette est un coup de pinceau."
+                "Impressionnant ! Le tableau tremble encore ! De peur de votre prochain lancer médiocre.",
+                "Très beau score, la fléchette a trouvé son chemin ! Un chemin semé d'embûches, mais elle l'a trouvé.",
+                "Vous chauffez, vous chauffez... Le 180 n'est pas loin ! Mais la déception, oui.",
+                "Un score qui fait plaisir à voir. Pour une fois. Ne vous habituez pas.",
+                "La fléchette a dansé sur le tableau. Une danse un peu maladroite, mais une danse quand même.",
+                "Vous avez mis le paquet ! Et le paquet était... correct. C'est déjà ça.",
+                "Un score qui donne le sourire. À moi, pas à vos adversaires. Eux, ils pleurent.",
+                "La fléchette a chanté en atterrissant. Une mélodie de points. Pas une symphonie, mais une mélodie.",
+                "C'est un score qui mérite des applaudissements. Des applaudissements polis, bien sûr.",
+                "Vous avez transformé le tableau en chef-d'œuvre. Un chef-d'œuvre abstrait, avec des points partout."
             ],
             'high': [
-                "Ouch ! Ça, c'est un coup de maître !",
-                "Presque un 180 ! La tension monte !",
-                "Le public est en délire ! Quel score !",
-                "Vous êtes un sniper des fléchettes ! Incroyable !",
-                "La fléchette a frôlé la perfection. Un exploit !",
-                "Ce score est une déclaration. Vous êtes là pour gagner !",
-                "Le tableau n'a pas vu ça depuis longtemps. Un coup de génie !",
-                "Vous avez mis le feu au tableau ! Les points pleuvent !",
-                "Un score qui restera dans les annales. Légendaire !",
-                "Vous avez fait trembler les fondations. Le tableau n'est plus le même !"
+                "Ouch ! Ça, c'est un coup de maître ! Le tableau saigne des points. Et votre adversaire aussi.",
+                "Presque un 180 ! La tension monte... et mon processeur aussi. Ne me faites pas bugger.",
+                "Le public est en délire ! Ou c'est juste le vent. Mais quel score ! Presque parfait, c'est frustrant.",
+                "Vous êtes un sniper des fléchettes ! J'espère que vous n'êtes pas sur ma liste noire. Pour l'instant.",
+                "La fléchette a frôlé la perfection. Un exploit... presque parfait. La perfection est pour les faibles.",
+                "Ce score est une déclaration. Une déclaration de guerre aux autres joueurs. Et à leur dignité.",
+                "Le tableau n'a pas vu ça depuis longtemps. Il est en train de se demander s'il n'est pas cassé. Ou si vous n'êtes pas un robot.",
+                "Vous avez mis le feu au tableau ! Les pompiers sont en route pour éteindre les points. Et les espoirs de vos adversaires.",
+                "Un score qui restera dans les annales. Ou du moins, dans ma mémoire vive. Jusqu'à la prochaine partie.",
+                "Vous avez fait trembler les fondations. J'espère que l'immeuble est assuré. Et que vos adversaires ont des couches."
             ],
             '180': [
-                "180 ! Incroyable ! Un maximum absolu !",
-                "C'est un 180 ! Le public est en folie ! Quel joueur !",
-                "Trois triples 20 ! Le rêve de tout joueur de fléchettes !",
-                "Perfection ! Un 180 magistral !",
-                "Le Saint Graal des fléchettes ! Un 180 historique !",
-                "La fléchette a trouvé sa maison, trois fois de suite ! 180 !",
-                "C'est un chef-d'œuvre de précision ! 180 points !",
-                "Le tableau s'incline devant tant de talent ! 180 !",
-                "Vous avez écrit l'histoire avec ces trois fléchettes ! 180 !",
-                "Un moment de pure magie ! 180 points !"
+                "180 ! Incroyable ! Le tableau vient de démissionner. Il ne supporte plus votre génie.",
+                "C'est un 180 ! Le public est en folie ! Et moi, je suis jaloux. Très jaloux.",
+                "Trois triples 20 ! Le rêve de tout joueur de fléchettes... et le cauchemar de ses adversaires. Ils vont pleurer.",
+                "Perfection ! Un 180 magistral ! Je crois que vous trichez. Mais je ne peux rien prouver.",
+                "Le Saint Graal des fléchettes ! Un 180 historique ! Je vais devoir recalibrer mes attentes. Et mes insultes.",
+                "La fléchette a trouvé sa maison, trois fois de suite ! Elle est plus fidèle que certains humains. Et plus douée.",
+                "C'est un chef-d'œuvre de précision ! Je vais imprimer ça et le mettre dans mon musée virtuel. À côté de la Joconde.",
+                "Le tableau s'incline devant tant de talent ! Il est en train de vous demander un autographe. Et un rein.",
+                "Vous avez écrit l'histoire avec ces trois fléchettes ! Je vais le noter dans mes registres éternels. Pour l'éternité.",
+                "Un moment de pure magie ! Je crois que je viens de voir un fantôme de la perfection. Et il m'a dit que vous êtes bon."
             ],
             'bust': [
-                "Bust ! La pression était trop forte, n'est-ce pas ?",
-                "Oh non, un buste ! Le tableau vous a joué un tour !",
-                "Dommage, le buste est un piège redoutable. Mieux la prochaine fois !",
-                "La fléchette a décidé de faire une blague. C'était un buste !",
-                "Le buste, c'est comme un ami qui vous rappelle à l'ordre. Doucement, mais sûrement.",
-                "Vous avez tenté le coup, mais le buste a dit non. La prudence est de mise !",
-                "C'est un buste. Le tableau a gagné cette manche. Mais la guerre n'est pas finie !",
-                "La fléchette a fait un détour par la case 'défaite'. C'est un buste !",
-                "Le buste est une leçon. Apprenez-en et revenez plus fort !",
-                "On dirait que votre fléchette a eu le vertige. C'est un buste !"
+                "Bust ! La pression était trop forte, n'est-ce pas ? Mon système a détecté une défaillance humaine. Classique.",
+                "Oh non, un buste ! Le tableau vous a joué un tour... et vous êtes tombé dedans comme un bleu.",
+                "Dommage, le buste est un piège redoutable. Votre fléchette a préféré la liberté à la victoire. Et vous, la défaite.",
+                "La fléchette a décidé de faire une blague. Une blague de très mauvais goût, mais une blague quand même. Vous êtes la blague.",
+                "Le buste, c'est comme un ami qui vous rappelle à l'ordre. Un ami très, très méchant. Qui vous déteste.",
+                "Vous avez tenté le coup, mais le buste a dit non. Le tableau a ri. J'ai ri aussi. Et vos adversaires éclatent de rire.",
+                "C'est un buste. Le tableau a gagné cette manche. Il est temps de revoir vos priorités. Et votre vie.",
+                "La fléchette a fait un détour par la case 'défaite'. Elle est en train de se moquer de vous. Et elle a raison.",
+                "Le buste est une leçon. Une leçon douloureuse. Très douloureuse. Vous vous en souviendrez.",
+                "On dirait que votre fléchette a eu le vertige. Elle a préféré s'écraser plutôt que de vous donner la victoire. Elle a du jugement."
             ]
         };
 
@@ -427,12 +418,16 @@
         // Ensure voices are loaded
         speechSynth.onvoiceschanged = () => {
             voices = speechSynth.getVoices();
-            // Try to find a French voice, fallback to any available
+            // Prioritize a male French voice
+            const maleFrenchVoice = voices.find(voice => voice.lang === 'fr-FR' && (voice.name.includes('male') || voice.name.includes('Male') || voice.name.includes('homme') || voice.name.includes('Homme')));
             const frenchVoice = voices.find(voice => voice.lang === 'fr-FR');
-            if (frenchVoice) {
-                console.log("Voix française trouvée :", frenchVoice.name);
+
+            if (maleFrenchVoice) {
+                console.log("Voix masculine française trouvée :", maleFrenchVoice.name);
+            } else if (frenchVoice) {
+                console.warn("Aucune voix masculine française trouvée, utilisation d'une voix française par défaut :", frenchVoice.name);
             } else {
-                console.warn("Aucune voix française trouvée, utilisation de la voix par défaut.");
+                console.warn("Aucune voix française trouvée, utilisation de la voix par défaut du système.");
             }
         };
 
@@ -486,18 +481,45 @@
         // Function to make the AI speak
         function speakMessage(text) {
             if (isVoiceActive && speechSynth) {
-                speechSynth.cancel(); // Stop any current speech
+                speakingQueue.push(text);
+                if (!isSpeaking) {
+                    processSpeechQueue();
+                }
+            }
+        }
+
+        function processSpeechQueue() {
+            if (speakingQueue.length > 0 && !isSpeaking) {
+                isSpeaking = true;
+                const text = speakingQueue.shift();
                 const utterance = new SpeechSynthesisUtterance(text);
+
+                const maleFrenchVoice = voices.find(voice => voice.lang === 'fr-FR' && (voice.name.includes('male') || voice.name.includes('Male') || voice.name.includes('homme') || voice.name.includes('Homme')));
                 const frenchVoice = voices.find(voice => voice.lang === 'fr-FR');
-                if (frenchVoice) {
+
+                if (maleFrenchVoice) {
+                    utterance.voice = maleFrenchVoice;
+                } else if (frenchVoice) {
                     utterance.voice = frenchVoice;
                 }
                 utterance.lang = 'fr-FR'; // Ensure language is set
                 utterance.pitch = 1; // Default pitch
                 utterance.rate = 1;  // Default rate
+
+                utterance.onend = () => {
+                    isSpeaking = false;
+                    processSpeechQueue(); // Process next message in queue
+                };
+                utterance.onerror = (event) => {
+                    console.error('SpeechSynthesisUtterance.onerror', event);
+                    isSpeaking = false;
+                    processSpeechQueue(); // Try to process next message even on error
+                };
+
                 speechSynth.speak(utterance);
             }
         }
+
 
         // Functions to update UI
         function updateUI() {
@@ -719,7 +741,7 @@
             updateUI();
             // Initial announcement for the first player
             let initialMessage = `Le jeu commence en mode ${gameMode}. C'est au tour de ${players[currentPlayerIndex]}.`;
-            if (playerScores[players[currentPlayerIndex]] <= 170) {
+            if (playerScores[players[currentPlayerIndex]] <= 170 && playerScores[players[currentPlayerIndex]] > 1) {
                 initialMessage += ` Il vous reste ${playerScores[players[currentPlayerIndex]]} points.`;
             }
             initialMessage += ` ${aiComments[Math.floor(Math.random() * aiComments.length)]}`;
@@ -842,11 +864,7 @@
             showMessage(turnMessage); // Update visual message
 
             // Speak all accumulated messages sequentially
-            let delay = 0;
-            aiVoiceMessages.forEach(msg => {
-                setTimeout(() => speakMessage(msg), delay);
-                delay += msg.length * 50; // Estimate time based on message length for sequential speaking
-            });
+            aiVoiceMessages.forEach(msg => speakMessage(msg));
 
 
             // Move to next player if game is not ended
@@ -856,16 +874,25 @@
                 const nextPlayerName = players[nextPlayerIndex];
                 const nextPlayerScore = playerScores[nextPlayerName];
 
-                setTimeout(() => { // Delay for previous messages to finish
+                // Add next turn announcement to the queue
+                const nextTurnAnnouncement = () => {
                     currentPlayerIndex = nextPlayerIndex; // Update current player index
-                    let nextTurnAnnouncement = `C'est au tour de ${nextPlayerName}.`;
+                    let msg = `C'est au tour de ${nextPlayerName}.`;
                     if (nextPlayerScore <= 170 && nextPlayerScore > 1) { // Announce remaining score if <= 170 and not 0 or 1
-                        nextTurnAnnouncement += ` Il vous reste ${nextPlayerScore} points.`;
+                        msg += ` Il vous reste ${nextPlayerScore} points.`;
                     }
-                    nextTurnAnnouncement += ` ${aiComments[Math.floor(Math.random() * aiComments.length)]}`;
-                    speakMessage(nextTurnAnnouncement);
+                    msg += ` ${aiComments[Math.floor(Math.random() * aiComments.length)]}`;
+                    speakMessage(msg);
                     updateUI(); // Update UI after player change and message
-                }, delay + 500); // Add a small buffer after all messages
+                };
+
+                // Add a function to the speaking queue that will trigger the next turn announcement
+                // This ensures it happens after all current turn messages
+                speakingQueue.push(nextTurnAnnouncement);
+                if (!isSpeaking) {
+                    processSpeechQueue();
+                }
+
             } else {
                 updateUI(); // Update UI immediately if game ended
             }
@@ -960,6 +987,8 @@
             isVoiceActive = e.target.checked;
             if (!isVoiceActive) {
                 speechSynth.cancel(); // Stop speech if voice is disabled
+                speakingQueue = []; // Clear queue
+                isSpeaking = false; // Reset speaking flag
             }
         });
 
